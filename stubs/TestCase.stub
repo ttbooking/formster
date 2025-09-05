@@ -1,0 +1,5 @@
+<?php
+
+namespace TTBooking\Formster\Tests;
+
+abstract class TestCase {}

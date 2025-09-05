@@ -1,0 +1,69 @@
+{
+    "name": "ttbooking/formster",
+    "type": "library",
+    "description": "Laravel Formster.",
+    "keywords": ["laravel", "formster"],
+    "license": "MIT",
+    "support": {
+        "issues": "https://github.com/ttbooking/formster/issues",
+        "source": "https://github.com/ttbooking/formster"
+    },
+    "authors": [
+        {
+            "name": "Sergey Danilchenko",
+            "email": "s.danilchenko@ttbooking.ru"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "intervention/image-laravel": "^1.5",
+        "laravel/framework": "^12.17"
+    },
+    "require-dev": {
+        "fakerphp/faker": "^1.23",
+        "larastan/larastan": "^3.3.1",
+        "laravel/pint": "^1.16.1",
+        "mockery/mockery": "^1.6",
+        "orchestra/testbench": "^10.0",
+        "pestphp/pest": "^3.2",
+        "pestphp/pest-plugin-laravel": "^3.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "TTBooking\\Formster\\": "src/"
+        },
+        "files": [
+            "src/Support/functions.php"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "TTBooking\\Formster\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "TTBooking\\Formster\\FormsterServiceProvider"
+            ],
+            "aliases": {
+                "PropertyParser": "TTBooking\\Formster\\Facades\\PropertyParser",
+                "PropertyHandler": "TTBooking\\Formster\\Facades\\PropertyHandler",
+                "ActionHandler": "TTBooking\\Formster\\Facades\\ActionHandler"
+            }
+        }
+    },
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        },
+        "sort-packages": true
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "scripts": {
+        "analyse": "@php vendor/bin/phpstan analyse",
+        "lint": "@php vendor/bin/pint --test",
+        "test": "@php vendor/bin/pest"
+    }
+}

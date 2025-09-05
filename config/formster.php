@@ -1,0 +1,56 @@
+<?php
+
+return [
+
+    /*
+    |--------------------------------------------------------------------------
+    | Default Property Parser
+    |--------------------------------------------------------------------------
+    */
+
+    'property_parser' => env('FORMSTER_PROPERTY_PARSER', 'phpstan'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Active Property Handlers
+    |--------------------------------------------------------------------------
+    */
+
+    'property_handlers' => [
+        TTBooking\Formster\Handlers\BooleanHandler::class,
+        TTBooking\Formster\Handlers\IntegerHandler::class,
+        TTBooking\Formster\Handlers\FloatHandler::class,
+        TTBooking\Formster\Handlers\StringHandler::class,
+        TTBooking\Formster\Handlers\EnumHandler::class,
+        TTBooking\Formster\Handlers\DateTimeZoneHandler::class,
+        TTBooking\Formster\Handlers\ColorHandler::class,
+        TTBooking\Formster\Handlers\ImageHandler::class,
+        TTBooking\Formster\Handlers\FileHandler::class,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | File Pseudotype Configuration
+    |--------------------------------------------------------------------------
+    */
+
+    'file' => [
+        'disk' => env('FORMSTER_DISK'),
+        'static_disk' => env('FORMSTER_STATIC_DISK', env('FORMSTER_DISK')),
+        'content_disposition' => env('FORMSTER_CONTENT_DISPOSITION', 'attachment'),
+        'show_uploaded_name' => env('FORMSTER_SHOW_FILENAME', true),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Image Pseudotype Preview Options
+    |--------------------------------------------------------------------------
+    */
+
+    'preview' => [
+        'width' => env('FORMSTER_PREVIEW_WIDTH', 100),
+        'height' => env('FORMSTER_PREVIEW_HEIGHT', 100),
+        'scale_down_threshold' => env('FORMSTER_PREVIEW_SCALE_DOWN_THRESHOLD', 10_240),
+    ],
+
+];
