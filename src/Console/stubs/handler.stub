@@ -15,7 +15,7 @@ class {{ class }} implements PropertyHandler
 
     public static function satisfies(AuraProperty $property): bool
     {
-        return $property->type->contains({{ type }});
+        return $property->type->contains({{ type }}::class);
     }
 
     public function component(): string
