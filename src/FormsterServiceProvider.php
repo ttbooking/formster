@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace TTBooking\Formster;
 
 // use Illuminate\Contracts\Support\DeferrableProvider;
+use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 use TTBooking\Formster\Contracts\PropertyParser;
@@ -20,6 +21,15 @@ class FormsterServiceProvider extends ServiceProvider // implements DeferrablePr
         'property-parser' => PropertyParserManager::class,
         'property-handler' => HandlerFactory::class,
         'action-handler' => ActionHandler::class,
+    ];
+
+    /**
+     * The commands to be registered.
+     *
+     * @var list<class-string<Command>>
+     */
+    protected array $commands = [
+        Console\HandlerMakeCommand::class,
     ];
 
     /**
@@ -74,6 +84,7 @@ class FormsterServiceProvider extends ServiceProvider // implements DeferrablePr
     {
         $this->configure();
         $this->registerServices();
+        $this->registerCommands();
     }
 
     /**
@@ -98,6 +109,18 @@ class FormsterServiceProvider extends ServiceProvider // implements DeferrablePr
     }
 
     /**
+     * Register the Formster Artisan commands.
+     */
+    protected function registerCommands(): void
+    {
+        foreach ($this->commands as $command) {
+            $this->app->singleton($command);
+        }
+
+        $this->commands($this->commands);
+    }
+
+    /**
      * Get the services provided by the provider.
      *
      * @return list<string>
@@ -108,6 +131,7 @@ class FormsterServiceProvider extends ServiceProvider // implements DeferrablePr
             'property-parser', 'property-parser.driver', PropertyParser::class,
             'property-handler', Contracts\HandlerFactory::class,
             'action-handler', Contracts\ActionHandler::class,
+            ...$this->commands,
         ];
     }
 }
