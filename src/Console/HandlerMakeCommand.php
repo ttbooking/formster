@@ -160,7 +160,7 @@ class HandlerMakeCommand extends GeneratorCommand
      */
     protected function possibleTypes(): array
     {
-        $typePath = app_path('Formster\Types');
+        $typePath = app_path('Formster/Types');
 
         if (! is_dir($typePath)) {
             return [];
