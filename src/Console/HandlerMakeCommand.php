@@ -55,7 +55,7 @@ class HandlerMakeCommand extends GeneratorCommand
     protected function buildClass($name): string
     {
         /** @var string $type */
-        $type = $this->option('type');
+        $type = $this->option('type') ?? Str::beforeLast($this->getNameInput(), $this->type);
 
         if (! Str::startsWith($type, [$this->laravel->getNamespace(), 'Illuminate', '\\'])) {
             $type = $this->laravel->getNamespace().'Formster\\Types\\'.str_replace('/', '\\', $type);
@@ -66,6 +66,14 @@ class HandlerMakeCommand extends GeneratorCommand
             [trim($type, '\\'), $basename = class_basename($type), Str::kebab($basename)],
             parent::buildClass($name)
         );
+    }
+
+    /**
+     * Get the desired class name from the input.
+     */
+    protected function getNameInput(): string
+    {
+        return Str::beforeLast(parent::getNameInput(), $this->type).$this->type;
     }
 
     /**
@@ -116,6 +124,18 @@ class HandlerMakeCommand extends GeneratorCommand
         return [
             ['type', 't', InputOption::VALUE_REQUIRED, 'The type or class being handled'],
             ['force', 'f', InputOption::VALUE_NONE, 'Create the class even if the handler already exists'],
+        ];
+    }
+
+    /**
+     * Prompt for missing input arguments using the returned questions.
+     *
+     * @return array<string, string|array{0: string, 1?: string}|Closure(): mixed>
+     */
+    protected function promptForMissingArgumentsUsing(): array
+    {
+        return [
+            'name' => ['What should the handler be named?', 'E.g. DateTimeHandler'],
         ];
     }
 
