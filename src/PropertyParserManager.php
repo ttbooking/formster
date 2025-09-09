@@ -55,7 +55,7 @@ class PropertyParserManager extends Manager implements ParserFactory, PropertyPa
         return new PhpStanParser;
     }
 
-    protected function createReflectionParser(): ReflectionParser
+    protected function createReflectionDriver(): ReflectionParser
     {
         return new ReflectionParser;
     }
