@@ -27,7 +27,7 @@ readonly class Aura
         return new static(
             $aura->summary !== '' ? $aura->summary : $this->summary,
             $aura->description !== '' ? $aura->description : $this->description,
-            $this->properties->merge($aura->properties),
+            $this->properties->merge($aura->properties)->values(),
         );
     }
 }
