@@ -8,7 +8,15 @@ return [
     |--------------------------------------------------------------------------
     */
 
-    'property_parser' => env('FORMSTER_PROPERTY_PARSER', 'phpstan'),
+    'property_parser' => env('FORMSTER_PROPERTY_PARSER', 'phpstan,reflection'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Property Cache TTL
+    |--------------------------------------------------------------------------
+    */
+
+    'property_cache_ttl' => env('FORMSTER_PROPERTY_CACHE_TTL'),
 
     /*
     |--------------------------------------------------------------------------

@@ -6,9 +6,9 @@ namespace TTBooking\Formster;
 
 // use Illuminate\Contracts\Support\DeferrableProvider;
 use Illuminate\Console\Command;
+use Illuminate\Contracts\Container\Container;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
-use TTBooking\Formster\Contracts\PropertyParser;
 
 class FormsterServiceProvider extends ServiceProvider // implements DeferrableProvider
 {
@@ -100,9 +100,19 @@ class FormsterServiceProvider extends ServiceProvider // implements DeferrablePr
      */
     protected function registerServices(): void
     {
+        $this->app->alias('property-parser', Contracts\ParserFactory::class);
+
         /** @phpstan-ignore-next-line */
-        $this->app->singleton('property-parser.driver', static fn ($app) => $app['property-parser']->driver());
-        $this->app->alias('property-parser.driver', PropertyParser::class);
+        $this->app->singleton('property-parser.parser', static fn ($app) => $app['property-parser']->parser());
+        $this->app->alias('property-parser.parser', Contracts\PropertyParser::class);
+
+        $this->app->when(Parsers\CachingParser::class)->needs('$ttl')->giveConfig('formster.property_cache_ttl');
+        $this->app->extend(
+            Contracts\PropertyParser::class,
+            static function (Contracts\PropertyParser $parser, Container $container) {
+                return $container->make(Parsers\CachingParser::class, compact('parser'));
+            }
+        );
 
         $this->app->when(HandlerFactory::class)->needs('$handlers')->giveConfig('formster.property_handlers', []);
         $this->app->alias('property-handler', Contracts\HandlerFactory::class);
@@ -128,7 +138,8 @@ class FormsterServiceProvider extends ServiceProvider // implements DeferrablePr
     public function provides(): array
     {
         return [
-            'property-parser', 'property-parser.driver', PropertyParser::class,
+            'property-parser', Contracts\ParserFactory::class,
+            'property-parser.parser', Contracts\PropertyParser::class,
             'property-handler', Contracts\HandlerFactory::class,
             'action-handler', Contracts\ActionHandler::class,
             ...$this->commands,

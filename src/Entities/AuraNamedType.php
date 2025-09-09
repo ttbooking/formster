@@ -18,6 +18,7 @@ readonly class AuraNamedType extends AuraType
         public string $name,
         iterable $parameters = [],
         bool $nullable = false,
+        public ?Aura $aura = null,
     ) {
         $this->parameters = collect($parameters);
         parent::__construct($nullable);

@@ -8,17 +8,26 @@ use Illuminate\Support\Collection;
 
 readonly class Aura
 {
-    /** @var Collection<int, AuraProperty> */
+    /** @var Collection<string, AuraProperty> */
     public Collection $properties;
 
     /**
      * @param  iterable<int, AuraProperty>  $properties
      */
-    public function __construct(
+    final public function __construct(
         public string $summary = '',
         public string $description = '',
         iterable $properties = [],
     ) {
-        $this->properties = collect($properties);
+        $this->properties = collect($properties)->keyBy('variableName');
+    }
+
+    public function merge(self $aura): static
+    {
+        return new static(
+            $aura->summary !== '' ? $aura->summary : $this->summary,
+            $aura->description !== '' ? $aura->description : $this->description,
+            $this->properties->merge($aura->properties),
+        );
     }
 }
