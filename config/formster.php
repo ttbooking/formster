@@ -22,6 +22,7 @@ return [
         TTBooking\Formster\Handlers\FloatHandler::class,
         TTBooking\Formster\Handlers\StringHandler::class,
         TTBooking\Formster\Handlers\EnumHandler::class,
+        TTBooking\Formster\Handlers\DateTimeHandler::class,
         TTBooking\Formster\Handlers\DateTimeZoneHandler::class,
         TTBooking\Formster\Handlers\ColorHandler::class,
         TTBooking\Formster\Handlers\ImageHandler::class,
