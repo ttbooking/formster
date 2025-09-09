@@ -12,11 +12,14 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Property Cache TTL
+    | Property Cache Options
     |--------------------------------------------------------------------------
     */
 
-    'property_cache_ttl' => env('FORMSTER_PROPERTY_CACHE_TTL'),
+    'property_cache' => [
+        'store' => env('FORMSTER_PROPERTY_CACHE_STORE', 'array'),
+        'ttl' => (int) env('FORMSTER_PROPERTY_CACHE_TTL') ?: null,
+    ],
 
     /*
     |--------------------------------------------------------------------------
@@ -47,7 +50,7 @@ return [
         'disk' => env('FORMSTER_DISK'),
         'static_disk' => env('FORMSTER_STATIC_DISK', env('FORMSTER_DISK')),
         'content_disposition' => env('FORMSTER_CONTENT_DISPOSITION', 'attachment'),
-        'show_uploaded_name' => env('FORMSTER_SHOW_FILENAME', true),
+        'show_uploaded_name' => (bool) env('FORMSTER_SHOW_FILENAME', true),
     ],
 
     /*
@@ -57,9 +60,9 @@ return [
     */
 
     'preview' => [
-        'width' => env('FORMSTER_PREVIEW_WIDTH', 100),
-        'height' => env('FORMSTER_PREVIEW_HEIGHT', 100),
-        'scale_down_threshold' => env('FORMSTER_PREVIEW_SCALE_DOWN_THRESHOLD', 10_240),
+        'width' => (int) env('FORMSTER_PREVIEW_WIDTH', 100),
+        'height' => (int) env('FORMSTER_PREVIEW_HEIGHT', 100),
+        'scale_down_threshold' => (int) env('FORMSTER_PREVIEW_SCALE_DOWN_THRESHOLD', 10_240),
     ],
 
 ];

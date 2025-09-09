@@ -6,8 +6,10 @@ namespace TTBooking\Formster;
 
 // use Illuminate\Contracts\Support\DeferrableProvider;
 use Illuminate\Console\Command;
+use Illuminate\Contracts\Cache\Repository;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\ServiceProvider;
 
 class FormsterServiceProvider extends ServiceProvider // implements DeferrableProvider
@@ -106,7 +108,10 @@ class FormsterServiceProvider extends ServiceProvider // implements DeferrablePr
         $this->app->singleton('property-parser.parser', static fn ($app) => $app['property-parser']->parser());
         $this->app->alias('property-parser.parser', Contracts\PropertyParser::class);
 
-        $this->app->when(Parsers\CachingParser::class)->needs('$ttl')->giveConfig('formster.property_cache_ttl');
+        $this->app->when(Parsers\CachingParser::class)->needs(Repository::class)->give(
+            static fn () => Cache::store(config('formster.property_cache.store')) // @phpstan-ignore argument.type
+        );
+        $this->app->when(Parsers\CachingParser::class)->needs('$ttl')->giveConfig('formster.property_cache.ttl');
         $this->app->extend(
             Contracts\PropertyParser::class,
             static function (Contracts\PropertyParser $parser, Container $container) {
