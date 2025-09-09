@@ -17,7 +17,7 @@ return [
     */
 
     'property_cache' => [
-        'store' => env('FORMSTER_PROPERTY_CACHE_STORE', 'array'),
+        'store' => env('FORMSTER_PROPERTY_CACHE_STORE'),
         'ttl' => (int) env('FORMSTER_PROPERTY_CACHE_TTL') ?: null,
     ],
 
