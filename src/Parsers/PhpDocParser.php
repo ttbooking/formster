@@ -21,6 +21,7 @@ use phpDocumentor\Reflection\Types\ContextFactory;
 use phpDocumentor\Reflection\Types\Intersection;
 use phpDocumentor\Reflection\Types\Nullable;
 use ReflectionClass;
+use Throwable;
 use TTBooking\Formster\Concerns\PerformsHigherOrderCalls;
 use TTBooking\Formster\Contracts\HigherOrderAware;
 use TTBooking\Formster\Contracts\PropertyParser;
@@ -60,19 +61,20 @@ class PhpDocParser implements HigherOrderAware, PropertyParser
         /** @var IlluminateCollection<int, Property|PropertyRead|PropertyWrite> $tags */
         $tags = collect(['property', 'property-read', 'property-write'])->flatMap($docblock->getTagsByName(...));
 
-        $props = $tags->map(fn (Property|PropertyRead|PropertyWrite $property) => new AuraProperty(
-            readable: ! $property instanceof PropertyWrite,
-            writable: ! $property instanceof PropertyRead,
-            type: $this->parseType($property->getType()),
-            variableName: $varName = (string) $property->getVariableName(),
-            description: (string) $property->getDescription(),
-            hasDefaultValue: $defaultObject instanceof Model
-                ? $defaultObject->hasAttribute($varName)
-                : isset($defaultObject->$varName),
-            defaultValue: $defaultObject instanceof Model
-                ? $defaultObject->getAttributeValue($varName)
-                : $defaultObject->$varName,
-        ));
+        $props = $tags->map(function (Property|PropertyRead|PropertyWrite $property) use ($defaultObject) {
+            $variableName = (string) $property->getVariableName();
+            [$hasDefaultValue, $defaultValue] = $this->fetchDefaultPropertyValue($defaultObject, $variableName);
+
+            return new AuraProperty(
+                readable: ! $property instanceof PropertyWrite,
+                writable: ! $property instanceof PropertyRead,
+                type: $this->parseType($property->getType()),
+                variableName: $variableName,
+                description: (string) $property->getDescription(),
+                hasDefaultValue: $hasDefaultValue,
+                defaultValue: $defaultValue,
+            );
+        });
 
         return new Aura(
             summary: $docblock->getSummary(),
@@ -111,5 +113,19 @@ class PhpDocParser implements HigherOrderAware, PropertyParser
     protected function parseTypes(array $types): array
     {
         return array_map(fn (Type $type) => $this->parseType($type), $types);
+    }
+
+    /**
+     * @return array{bool, mixed}
+     */
+    protected function fetchDefaultPropertyValue(object $object, string $property): array
+    {
+        try {
+            return $object instanceof Model
+                ? [$object->hasAttribute($property), $object->getAttributeValue($property)]
+                : [isset($object->$property), $object->$property];
+        } catch (Throwable) {
+            return [false, null];
+        }
     }
 }

@@ -25,6 +25,7 @@ use PHPStan\PhpDocParser\Parser\TokenIterator;
 use PHPStan\PhpDocParser\Parser\TypeParser;
 use PHPStan\PhpDocParser\ParserConfig;
 use ReflectionClass;
+use Throwable;
 use TTBooking\Formster\Concerns\PerformsHigherOrderCalls;
 use TTBooking\Formster\Contracts\HigherOrderAware;
 use TTBooking\Formster\Contracts\PropertyParser;
@@ -79,18 +80,17 @@ class PhpStanParser implements HigherOrderAware, PropertyParser
         $props = [];
         foreach (['@property', '@property-read', '@property-write'] as $tag) {
             foreach ($phpDocNode->getPropertyTagValues($tag) as $node) {
+                $variableName = ltrim($node->propertyName, '$');
+                [$hasDefaultValue, $defaultValue] = $this->fetchDefaultPropertyValue($defaultObject, $variableName);
+
                 $props[] = new AuraProperty(
                     readable: $tag !== '@property-write',
                     writable: $tag !== '@property-read',
                     type: $this->parseType($node->type, $resolver),
-                    variableName: $varName = ltrim($node->propertyName, '$'),
+                    variableName: $variableName,
                     description: $node->description,
-                    hasDefaultValue: $defaultObject instanceof Model
-                        ? $defaultObject->hasAttribute($varName)
-                        : isset($defaultObject->$varName),
-                    defaultValue: $defaultObject instanceof Model
-                        ? $defaultObject->getAttributeValue($varName)
-                        : $defaultObject->$varName,
+                    hasDefaultValue: $hasDefaultValue,
+                    defaultValue: $defaultValue,
                 );
             }
         }
@@ -144,5 +144,19 @@ class PhpStanParser implements HigherOrderAware, PropertyParser
             fn (TypeNode $type) => $this->parseType($type, $typeResolver),
             array_values($types)
         );
+    }
+
+    /**
+     * @return array{bool, mixed}
+     */
+    protected function fetchDefaultPropertyValue(object $object, string $property): array
+    {
+        try {
+            return $object instanceof Model
+                ? [$object->hasAttribute($property), $object->getAttributeValue($property)]
+                : [isset($object->$property), $object->$property];
+        } catch (Throwable) {
+            return [false, null];
+        }
     }
 }
