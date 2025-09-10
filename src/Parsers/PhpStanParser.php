@@ -117,10 +117,14 @@ class PhpStanParser implements HigherOrderAware, PropertyParser
         return match (true) {
             $type instanceof UnionTypeNode => new AuraUnionType($this->parseTypes($type->types, $typeResolver)),
             $type instanceof IntersectionTypeNode => new AuraIntersectionType($this->parseTypes($type->types, $typeResolver)),
-            $type instanceof IdentifierTypeNode => new AuraNamedType($typeResolver($type->name)),
+            $type instanceof IdentifierTypeNode => new AuraNamedType(
+                $resolved = $typeResolver($type->name),
+                aura: class_exists($resolved) || interface_exists($resolved) ? $this->proxy->parse($resolved) : null
+            ),
             $type instanceof GenericTypeNode => new AuraNamedType(
-                $typeResolver($type->type->name),
-                $this->parseTypes($type->genericTypes, $typeResolver)
+                $resolved = $typeResolver($type->type->name),
+                $this->parseTypes($type->genericTypes, $typeResolver),
+                aura: class_exists($resolved) || interface_exists($resolved) ? $this->proxy->parse($resolved) : null
             ),
             $type instanceof ConstTypeNode => new AuraNamedType((string) $type->constExpr),
             default => throw new ParserException('Unsupported node type.'),
