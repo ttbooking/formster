@@ -119,12 +119,12 @@ class PhpStanParser implements HigherOrderAware, PropertyParser
             $type instanceof IntersectionTypeNode => new AuraIntersectionType($this->parseTypes($type->types, $typeResolver)),
             $type instanceof IdentifierTypeNode => new AuraNamedType(
                 $resolved = $typeResolver($type->name),
-                aura: class_exists($resolved) || interface_exists($resolved) ? $this->proxy->parse($resolved) : null
+                aura: $this->parseNested($resolved)
             ),
             $type instanceof GenericTypeNode => new AuraNamedType(
                 $resolved = $typeResolver($type->type->name),
                 $this->parseTypes($type->genericTypes, $typeResolver),
-                aura: class_exists($resolved) || interface_exists($resolved) ? $this->proxy->parse($resolved) : null
+                aura: $this->parseNested($resolved)
             ),
             $type instanceof ConstTypeNode => new AuraNamedType((string) $type->constExpr),
             default => throw new ParserException('Unsupported node type.'),
@@ -144,6 +144,12 @@ class PhpStanParser implements HigherOrderAware, PropertyParser
             fn (TypeNode $type) => $this->parseType($type, $typeResolver),
             array_values($types)
         );
+    }
+
+    protected function parseNested(string $class): ?Aura
+    {
+        return (class_exists($class) || interface_exists($class)) && ! enum_exists($class)
+            ? $this->proxy->parse($class) : null;
     }
 
     /**
