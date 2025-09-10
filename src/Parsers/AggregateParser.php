@@ -24,6 +24,8 @@ class AggregateParser implements PropertyParser
 
             if ($resolved instanceof static) {
                 $this->parsers = [...$this->parsers, ...$resolved->parsers];
+
+                continue;
             }
 
             if ($resolved instanceof CachingParser) {
