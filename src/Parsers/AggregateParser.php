@@ -4,12 +4,16 @@ declare(strict_types=1);
 
 namespace TTBooking\Formster\Parsers;
 
+use TTBooking\Formster\Contracts\HigherOrderAware;
 use TTBooking\Formster\Contracts\ParserFactory;
 use TTBooking\Formster\Contracts\PropertyParser;
 use TTBooking\Formster\Entities\Aura;
 use TTBooking\Formster\Exceptions\ParserException;
 
-class AggregateParser implements PropertyParser
+/**
+ * @implements HigherOrderAware<PropertyParser>
+ */
+class AggregateParser implements HigherOrderAware, PropertyParser
 {
     /** @var array<string, PropertyParser> */
     protected array $parsers = [];
@@ -35,8 +39,21 @@ class AggregateParser implements PropertyParser
                 $resolved = $resolved->parser;
             }
 
-            $this->parsers[$parser] ??= $resolved;
+            $this->parsers[$parser] ??= $resolved instanceof HigherOrderAware
+                ? (clone $resolved)->setProxy($this)
+                : $resolved;
         }
+    }
+
+    public function setProxy(object $proxy): static
+    {
+        foreach ($this->parsers as $name => $parser) {
+            if ($parser instanceof HigherOrderAware) {
+                $this->parsers[$name] = (clone $parser)->setProxy($proxy);
+            }
+        }
+
+        return $this;
     }
 
     public function parse(object|string $objectOrClass): Aura

@@ -21,6 +21,8 @@ use phpDocumentor\Reflection\Types\ContextFactory;
 use phpDocumentor\Reflection\Types\Intersection;
 use phpDocumentor\Reflection\Types\Nullable;
 use ReflectionClass;
+use TTBooking\Formster\Concerns\PerformsHigherOrderCalls;
+use TTBooking\Formster\Contracts\HigherOrderAware;
 use TTBooking\Formster\Contracts\PropertyParser;
 use TTBooking\Formster\Entities\Aura;
 use TTBooking\Formster\Entities\AuraIntersectionType;
@@ -29,8 +31,19 @@ use TTBooking\Formster\Entities\AuraProperty;
 use TTBooking\Formster\Entities\AuraType;
 use TTBooking\Formster\Entities\AuraUnionType;
 
-class PhpDocParser implements PropertyParser
+/**
+ * @implements HigherOrderAware<PropertyParser>
+ */
+class PhpDocParser implements HigherOrderAware, PropertyParser
 {
+    /** @use PerformsHigherOrderCalls<PropertyParser> */
+    use PerformsHigherOrderCalls;
+
+    public function __construct()
+    {
+        $this->proxy = $this;
+    }
+
     public function parse(object|string $objectOrClass): Aura
     {
         $docblock = DocBlockFactory::createInstance()->create(

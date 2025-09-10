@@ -25,6 +25,8 @@ use PHPStan\PhpDocParser\Parser\TokenIterator;
 use PHPStan\PhpDocParser\Parser\TypeParser;
 use PHPStan\PhpDocParser\ParserConfig;
 use ReflectionClass;
+use TTBooking\Formster\Concerns\PerformsHigherOrderCalls;
+use TTBooking\Formster\Contracts\HigherOrderAware;
 use TTBooking\Formster\Contracts\PropertyParser;
 use TTBooking\Formster\Entities\Aura;
 use TTBooking\Formster\Entities\AuraIntersectionType;
@@ -34,8 +36,19 @@ use TTBooking\Formster\Entities\AuraType;
 use TTBooking\Formster\Entities\AuraUnionType;
 use TTBooking\Formster\Exceptions\ParserException;
 
-class PhpStanParser implements PropertyParser
+/**
+ * @implements HigherOrderAware<PropertyParser>
+ */
+class PhpStanParser implements HigherOrderAware, PropertyParser
 {
+    /** @use PerformsHigherOrderCalls<PropertyParser> */
+    use PerformsHigherOrderCalls;
+
+    public function __construct()
+    {
+        $this->proxy = $this;
+    }
+
     public function parse(object|string $objectOrClass): Aura
     {
         $refClass = new ReflectionClass($objectOrClass);

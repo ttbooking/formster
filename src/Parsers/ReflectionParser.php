@@ -10,6 +10,8 @@ use ReflectionNamedType;
 use ReflectionProperty;
 use ReflectionType;
 use ReflectionUnionType;
+use TTBooking\Formster\Concerns\PerformsHigherOrderCalls;
+use TTBooking\Formster\Contracts\HigherOrderAware;
 use TTBooking\Formster\Contracts\PropertyParser;
 use TTBooking\Formster\Entities\Aura;
 use TTBooking\Formster\Entities\AuraIntersectionType;
@@ -19,8 +21,19 @@ use TTBooking\Formster\Entities\AuraType;
 use TTBooking\Formster\Entities\AuraUnionType;
 use TTBooking\Formster\Exceptions\ParserException;
 
-class ReflectionParser implements PropertyParser
+/**
+ * @implements HigherOrderAware<PropertyParser>
+ */
+class ReflectionParser implements HigherOrderAware, PropertyParser
 {
+    /** @use PerformsHigherOrderCalls<PropertyParser> */
+    use PerformsHigherOrderCalls;
+
+    public function __construct()
+    {
+        $this->proxy = $this;
+    }
+
     public function parse(object|string $objectOrClass): Aura
     {
         $refClass = new ReflectionClass($objectOrClass);

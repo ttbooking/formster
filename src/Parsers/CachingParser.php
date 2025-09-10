@@ -8,6 +8,7 @@ use Closure;
 use DateInterval;
 use DateTimeInterface;
 use Illuminate\Contracts\Cache\Repository;
+use TTBooking\Formster\Contracts\HigherOrderAware;
 use TTBooking\Formster\Contracts\PropertyParser;
 use TTBooking\Formster\Entities\Aura;
 
@@ -23,7 +24,9 @@ class CachingParser implements PropertyParser
         ?string $key = null,
         protected DateTimeInterface|DateInterval|Closure|int|null $ttl = null,
     ) {
-        $this->parser = $parser instanceof static ? $parser->parser : $parser;
+        $resolved = $parser instanceof static ? $parser->parser : $parser;
+        $this->parser = $resolved instanceof HigherOrderAware ? (clone $resolved)->setProxy($this) : $resolved;
+
         $this->key = $key ?? get_class($this->parser);
     }
 
