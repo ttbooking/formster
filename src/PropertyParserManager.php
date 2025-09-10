@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace TTBooking\Formster;
 
+use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Support\Manager;
 use TTBooking\Formster\Contracts\ParserFactory;
 use TTBooking\Formster\Contracts\PropertyParser;
 use TTBooking\Formster\Entities\Aura;
 use TTBooking\Formster\Parsers\AggregateParser;
+use TTBooking\Formster\Parsers\CachingParser;
 use TTBooking\Formster\Parsers\PhpDocParser;
 use TTBooking\Formster\Parsers\PhpStanParser;
 use TTBooking\Formster\Parsers\ReflectionParser;
@@ -34,29 +36,52 @@ class PropertyParserManager extends Manager implements ParserFactory, PropertyPa
         return is_string($parser) && str_contains($parser, ',') ? 'aggregate' : $parser;
     }
 
-    protected function createAggregateDriver(): AggregateParser
+    /**
+     * @throws BindingResolutionException
+     */
+    protected function createAggregateDriver(): CachingParser
     {
         /** @var string $parsers */
         $parsers = $this->config->get('formster.property_parser', '');
 
-        return new AggregateParser($this, array_filter(
-            explode(',', $parsers),
-            static fn ($parser) => $parser !== '' && $parser !== 'aggregate'
-        ));
+        return $this->decorateInstance(
+            new AggregateParser($this, array_filter(
+                explode(',', $parsers),
+                static fn ($parser) => $parser !== '' && $parser !== 'aggregate'
+            )),
+            'aggregate'
+        );
     }
 
-    protected function createPhpdocDriver(): PhpDocParser
+    /**
+     * @throws BindingResolutionException
+     */
+    protected function createPhpdocDriver(): CachingParser
     {
-        return new PhpDocParser;
+        return $this->decorateInstance(new PhpDocParser, 'phpdoc');
     }
 
-    protected function createPhpstanDriver(): PhpStanParser
+    /**
+     * @throws BindingResolutionException
+     */
+    protected function createPhpstanDriver(): CachingParser
     {
-        return new PhpStanParser;
+        return $this->decorateInstance(new PhpStanParser, 'phpstan');
     }
 
-    protected function createReflectionDriver(): ReflectionParser
+    /**
+     * @throws BindingResolutionException
+     */
+    protected function createReflectionDriver(): CachingParser
     {
-        return new ReflectionParser;
+        return $this->decorateInstance(new ReflectionParser, 'reflection');
+    }
+
+    /**
+     * @throws BindingResolutionException
+     */
+    protected function decorateInstance(PropertyParser $parser, ?string $key = null): CachingParser
+    {
+        return $this->container->make(CachingParser::class, compact('parser', 'key'));
     }
 }
