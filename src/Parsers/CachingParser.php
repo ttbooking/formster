@@ -12,12 +12,19 @@ use TTBooking\Formster\Contracts\HigherOrderAware;
 use TTBooking\Formster\Contracts\PropertyParser;
 use TTBooking\Formster\Entities\Aura;
 
+/**
+ * @template TPropertyParser of PropertyParser = PropertyParser
+ */
 class CachingParser implements PropertyParser
 {
+    /** @var TPropertyParser */
     public readonly PropertyParser $parser;
 
     protected string $key;
 
+    /**
+     * @param  TPropertyParser|static<TPropertyParser>  $parser
+     */
     public function __construct(
         PropertyParser $parser,
         protected Repository $cache,

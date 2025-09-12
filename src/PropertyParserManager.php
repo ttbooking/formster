@@ -39,49 +39,37 @@ class PropertyParserManager extends Manager implements ParserFactory, PropertyPa
     /**
      * @throws BindingResolutionException
      */
-    protected function createAggregateDriver(): CachingParser
+    protected function createDriver($driver): CachingParser
+    {
+        return $this->container->make(CachingParser::class, [
+            'parser' => parent::createDriver($driver),
+            'key' => $driver,
+        ]);
+    }
+
+    protected function createAggregateDriver(): AggregateParser
     {
         /** @var string $parsers */
         $parsers = $this->config->get('formster.property_parser', '');
 
-        return $this->decorateInstance(
-            new AggregateParser($this, array_filter(
-                explode(',', $parsers),
-                static fn ($parser) => $parser !== '' && $parser !== 'aggregate'
-            )),
-            'aggregate'
-        );
+        return new AggregateParser($this, array_filter(
+            explode(',', $parsers),
+            static fn ($parser) => $parser !== '' && $parser !== 'aggregate'
+        ));
     }
 
-    /**
-     * @throws BindingResolutionException
-     */
-    protected function createPhpdocDriver(): CachingParser
+    protected function createPhpdocDriver(): PhpDocParser
     {
-        return $this->decorateInstance(new PhpDocParser, 'phpdoc');
+        return new PhpDocParser;
     }
 
-    /**
-     * @throws BindingResolutionException
-     */
-    protected function createPhpstanDriver(): CachingParser
+    protected function createPhpstanDriver(): PhpStanParser
     {
-        return $this->decorateInstance(new PhpStanParser, 'phpstan');
+        return new PhpStanParser;
     }
 
-    /**
-     * @throws BindingResolutionException
-     */
-    protected function createReflectionDriver(): CachingParser
+    protected function createReflectionDriver(): ReflectionParser
     {
-        return $this->decorateInstance(new ReflectionParser, 'reflection');
-    }
-
-    /**
-     * @throws BindingResolutionException
-     */
-    protected function decorateInstance(PropertyParser $parser, ?string $key = null): CachingParser
-    {
-        return $this->container->make(CachingParser::class, compact('parser', 'key'));
+        return new ReflectionParser;
     }
 }

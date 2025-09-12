@@ -19,12 +19,14 @@ class AggregateParser implements HigherOrderAware, PropertyParser
     protected array $parsers = [];
 
     /**
-     * @param  iterable<string>  $parsers
+     * @param  iterable<PropertyParser|string>  $parsers
      */
     public function __construct(ParserFactory $factory, iterable $parsers = [])
     {
         foreach ($parsers as $parser) {
-            $resolved = $factory->parser($parser);
+            [$resolved, $key] = is_string($parser)
+                ? [$factory->parser($parser), $parser]
+                : [$parser, get_class($parser)];
 
             if ($resolved instanceof static) {
                 $this->parsers = [...$this->parsers, ...$resolved->parsers];
@@ -39,7 +41,7 @@ class AggregateParser implements HigherOrderAware, PropertyParser
                 $resolved = $resolved->parser;
             }
 
-            $this->parsers[$parser] ??= $resolved instanceof HigherOrderAware
+            $this->parsers[$key] ??= $resolved instanceof HigherOrderAware
                 ? (clone $resolved)->setProxy($this)
                 : $resolved;
         }
@@ -47,9 +49,9 @@ class AggregateParser implements HigherOrderAware, PropertyParser
 
     public function setProxy(object $proxy): static
     {
-        foreach ($this->parsers as $name => $parser) {
+        foreach ($this->parsers as $key => $parser) {
             if ($parser instanceof HigherOrderAware) {
-                $this->parsers[$name] = (clone $parser)->setProxy($proxy);
+                $this->parsers[$key] = (clone $parser)->setProxy($proxy);
             }
         }
 
