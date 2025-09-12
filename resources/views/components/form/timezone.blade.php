@@ -4,7 +4,7 @@
 
 @if (! $object || ! $editable)
     @php($timezone = prop_val($property, $object))
-    <span {{ $attributes }}>{{ $timezone->getName() }} ({{ now($timezone)->getOffsetString() }})</span>
+    <span {{ $attributes }}>{{ $timezone->getName() }} (<time>{{ now($timezone)->getOffsetString() }}</time>)</span>
 @else
     <select {{ $attributes }} name="{{ $property->variableName }}" @disabled(! $property->writable)>
         @foreach ($timezones as $region => $timezone)
