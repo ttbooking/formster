@@ -1,2 +1,38 @@
+laravel: '@testbench'
+
 providers:
   - TTBooking\Formster\FormsterServiceProvider
+  # - Workbench\App\Providers\WorkbenchServiceProvider
+
+migrations:
+  - workbench/database/migrations
+
+seeders:
+  - Workbench\Database\Seeders\DatabaseSeeder
+
+env:
+  - FORMSTER_PROPERTY_PARSER=phpstan
+
+workbench:
+  start: '/formster/1'
+  user: test@example.com
+  install: true
+  health: false
+  discovers:
+    web: true
+    api: true
+    commands: true
+    components: true
+    factories: true
+    views: true
+  build:
+    # - sync-skeleton
+    # - view-cache
+    - asset-publish
+    - create-sqlite-db
+    - db-wipe
+    - migrate-fresh
+  sync:
+    - from: storage
+      to: workbench/storage
+      reverse: true

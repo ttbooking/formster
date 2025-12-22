@@ -1,4 +1,5 @@
 <form {{ $attributes->only(['id', 'action', 'enctype'])->merge($mergeAttrs) }} method="POST">
+    @csrf
     @method('PUT')
     <x-formster::form.table {{ $attributes->except(['id', 'enctype']) }} :$object :$showDefaults :editable="true" />
     @if (! isset($buttons) || $buttons->isEmpty())
