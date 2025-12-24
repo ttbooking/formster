@@ -63,6 +63,11 @@ class File implements Castable, Comparable, JsonSerializable, Stringable
         return Storage::disk($this->disk)->size($this->name);
     }
 
+    public function path(): string
+    {
+        return Storage::disk($this->disk)->path($this->name);
+    }
+
     public function get(): ?string
     {
         return Storage::disk($this->disk)->get($this->name);
