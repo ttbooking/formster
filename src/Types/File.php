@@ -55,7 +55,7 @@ class File implements Castable, Comparable, JsonSerializable, Stringable
 
     public function exists(): bool
     {
-        return Storage::disk($this->disk)->exists($this->name);
+        return Storage::disk($this->disk)->fileExists($this->name);
     }
 
     public function size(): int
