@@ -1,5 +1,16 @@
 <?php
 
+use TTBooking\Formster\Handlers\BooleanHandler;
+use TTBooking\Formster\Handlers\ColorHandler;
+use TTBooking\Formster\Handlers\DateTimeHandler;
+use TTBooking\Formster\Handlers\DateTimeZoneHandler;
+use TTBooking\Formster\Handlers\EnumHandler;
+use TTBooking\Formster\Handlers\FileHandler;
+use TTBooking\Formster\Handlers\FloatHandler;
+use TTBooking\Formster\Handlers\ImageHandler;
+use TTBooking\Formster\Handlers\IntegerHandler;
+use TTBooking\Formster\Handlers\StringHandler;
+
 return [
 
     /*
@@ -28,16 +39,16 @@ return [
     */
 
     'property_handlers' => [
-        TTBooking\Formster\Handlers\BooleanHandler::class,
-        TTBooking\Formster\Handlers\IntegerHandler::class,
-        TTBooking\Formster\Handlers\FloatHandler::class,
-        TTBooking\Formster\Handlers\StringHandler::class,
-        TTBooking\Formster\Handlers\EnumHandler::class,
-        TTBooking\Formster\Handlers\DateTimeHandler::class,
-        TTBooking\Formster\Handlers\DateTimeZoneHandler::class,
-        TTBooking\Formster\Handlers\ColorHandler::class,
-        TTBooking\Formster\Handlers\ImageHandler::class,
-        TTBooking\Formster\Handlers\FileHandler::class,
+        BooleanHandler::class,
+        IntegerHandler::class,
+        FloatHandler::class,
+        StringHandler::class,
+        EnumHandler::class,
+        DateTimeHandler::class,
+        DateTimeZoneHandler::class,
+        ColorHandler::class,
+        ImageHandler::class,
+        FileHandler::class,
     ],
 
     /*

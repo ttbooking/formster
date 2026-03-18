@@ -7,11 +7,12 @@ namespace TTBooking\Formster\Facades;
 use Illuminate\Support\Facades\Facade;
 use TTBooking\Formster\Contracts\PropertyHandler as PropertyHandlerContract;
 use TTBooking\Formster\Entities\AuraProperty;
+use TTBooking\Formster\HandlerFactory;
 
 /**
  * @method static PropertyHandlerContract for(AuraProperty $property)
  *
- * @see \TTBooking\Formster\HandlerFactory
+ * @see HandlerFactory
  */
 class PropertyHandler extends Facade
 {

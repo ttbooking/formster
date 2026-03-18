@@ -7,12 +7,13 @@ namespace TTBooking\Formster\Facades;
 use Illuminate\Support\Facades\Facade;
 use TTBooking\Formster\Contracts\PropertyParser as PropertyParserContract;
 use TTBooking\Formster\Entities\Aura;
+use TTBooking\Formster\PropertyParserManager;
 
 /**
  * @method static PropertyParserContract parser(string|null $parser = null)
  * @method static Aura parse(object|string $objectOrClass)
  *
- * @see \TTBooking\Formster\PropertyParserManager
+ * @see PropertyParserManager
  */
 class PropertyParser extends Facade
 {
