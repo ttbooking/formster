@@ -28,6 +28,10 @@
         "pestphp/pest": "^3.2 || ^4.0",
         "pestphp/pest-plugin-laravel": "^3.0 || ^4.0"
     },
+    "conflict": {
+        "phpdocumentor/reflection-docblock": ">=6",
+        "phpdocumentor/type-resolver": ">=2"
+    },
     "autoload": {
         "psr-4": {
             "TTBooking\\Formster\\": "src/"
