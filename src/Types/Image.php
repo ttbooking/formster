@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace TTBooking\Formster\Types;
 
+use Intervention\Image\Decoders\BinaryImageDecoder;
 use Intervention\Image\EncodedImage;
 use Intervention\Image\Exceptions\DecoderException;
+use Intervention\Image\Interfaces\AnimationFactoryInterface;
+use Intervention\Image\Interfaces\ImageInterface;
 use Intervention\Image\Laravel\Facades\Image as InterventionImage;
 use TTBooking\Formster\Casts\AsImage;
 
@@ -37,7 +40,7 @@ class Image extends File
             return null;
         }
 
-        return (new EncodedImage($data, $this->mediaType()))->toDataUri();
+        return (string) (new EncodedImage($data, $this->mediaType()))->toDataUri();
     }
 
     public function preview(): ?string
@@ -50,7 +53,12 @@ class Image extends File
             $preview = new EncodedImage($data, $this->mediaType());
         } else {
             try {
-                $preview = InterventionImage::read($data)
+                /** @var ImageInterface $image */
+                $image = interface_exists(AnimationFactoryInterface::class)
+                    ? InterventionImage::decode($data, BinaryImageDecoder::class)
+                    : InterventionImage::read($data, BinaryImageDecoder::class);
+
+                $preview = $image
                     ->scaleDown(static::previewWidth(), static::previewHeight())
                     ->encode();
             } catch (DecoderException) {
@@ -58,7 +66,7 @@ class Image extends File
             }
         }
 
-        return $preview->toDataUri();
+        return (string) $preview->toDataUri();
     }
 
     /**

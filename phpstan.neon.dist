@@ -27,3 +27,6 @@ parameters:
         -
             identifier: larastan.noEnvCallsOutsideOfConfig
             reportUnmatched: false
+        -
+            identifier: staticMethod.notFound
+            path: src/Types/Image.php
