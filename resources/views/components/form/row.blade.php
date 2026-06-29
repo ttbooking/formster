@@ -1,8 +1,8 @@
-@aware(['object', 'aura', 'showDefaults', 'editable'])
+@aware(['object', 'showDefaults'])
 
 <tr @class(['formster-property-changed' => $changed])>
     <th>
-        @if ($editable && Gate::allows(array_unique([$aura->updatePolicy, $property->updatePolicy]), [$object, $property->variableName]))
+        @if ($editable)
             <label for="{{ $id }}" title="{{ $property->variableName }}">{!! Str::inlineMarkdown($description) ?: $property->variableName !!}</label>
         @else
             <span title="{{ $property->variableName }}">{!! Str::inlineMarkdown($description) ?: $property->variableName !!}</span>
