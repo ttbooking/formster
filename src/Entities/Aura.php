@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace TTBooking\Formster\Entities;
 
+use Attribute;
 use Illuminate\Support\Collection;
 
+#[Attribute(Attribute::TARGET_CLASS)]
 readonly class Aura
 {
     /** @var Collection<string, AuraProperty> */
@@ -18,6 +20,8 @@ readonly class Aura
         public string $summary = '',
         public string $description = '',
         iterable $properties = [],
+        public string $viewPolicy = 'view',
+        public string $updatePolicy = 'update',
     ) {
         $this->properties = collect($properties)->keyBy('variableName');
     }

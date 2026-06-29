@@ -10,6 +10,7 @@ use TTBooking\Formster\Contracts\ParserFactory;
 use TTBooking\Formster\Contracts\PropertyParser;
 use TTBooking\Formster\Entities\Aura;
 use TTBooking\Formster\Parsers\AggregateParser;
+use TTBooking\Formster\Parsers\AuraParser;
 use TTBooking\Formster\Parsers\CachingParser;
 use TTBooking\Formster\Parsers\PhpDocParser;
 use TTBooking\Formster\Parsers\PhpStanParser;
@@ -56,6 +57,11 @@ class PropertyParserManager extends Manager implements ParserFactory, PropertyPa
             explode(',', $parsers),
             static fn ($parser) => $parser !== '' && $parser !== 'aggregate'
         ));
+    }
+
+    protected function createAuraDriver(): AuraParser
+    {
+        return new AuraParser;
     }
 
     protected function createPhpdocDriver(): PhpDocParser

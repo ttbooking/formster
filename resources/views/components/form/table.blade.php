@@ -16,7 +16,9 @@
     </thead>
     <tbody>
         @foreach ($aura->properties as $property)
-            <x-formster::form.row :$property />
+            @if (Gate::allows(array_unique([$aura->viewPolicy, $property->viewPolicy]), [$object, $property->variableName]))
+                <x-formster::form.row :$property />
+            @endif
         @endforeach
     </tbody>
 </table>

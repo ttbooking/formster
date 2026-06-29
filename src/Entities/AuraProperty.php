@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace TTBooking\Formster\Entities;
 
+use Attribute;
 use Stringable;
 use UnexpectedValueException;
 
+#[Attribute(Attribute::TARGET_PROPERTY)]
 readonly class AuraProperty implements Stringable
 {
     public function __construct(
@@ -17,6 +19,8 @@ readonly class AuraProperty implements Stringable
         public string $description,
         public bool $hasDefaultValue = false,
         public mixed $defaultValue = null,
+        public string $viewPolicy = 'view',
+        public string $updatePolicy = 'update',
     ) {}
 
     public function __toString(): string
