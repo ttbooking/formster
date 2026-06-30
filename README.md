@@ -1,5 +1,11 @@
 # Laravel Formster
 
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/ttbooking/formster.svg?style=flat-square)](https://packagist.org/packages/ttbooking/formster)
+[![Tests](https://img.shields.io/github/actions/workflow/status/ttbooking/formster/tests.yml?branch=master&label=tests&style=flat-square)](https://github.com/ttbooking/formster/actions/workflows/tests.yml)
+[![PHP Version](https://img.shields.io/packagist/php-v/ttbooking/formster.svg?style=flat-square)](https://packagist.org/packages/ttbooking/formster)
+[![Total Downloads](https://img.shields.io/packagist/dt/ttbooking/formster.svg?style=flat-square)](https://packagist.org/packages/ttbooking/formster)
+[![License](https://img.shields.io/packagist/l/ttbooking/formster.svg?style=flat-square)](LICENSE.md)
+
 **Formster** — это Laravel-библиотека, которая **автоматически генерирует HTML-формы и таблицы-просмотры из любого PHP-объекта или Eloquent-модели**, опираясь на типы свойств. Вам не нужно вручную описывать каждое поле формы: Formster читает структуру объекта из PHPDoc-аннотаций (`@property`), нативных типов PHP или PHP-атрибутов, подбирает подходящий виджет ввода для каждого свойства и берёт на себя обработку отправленных данных.
 
 ```blade
