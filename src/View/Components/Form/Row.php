@@ -39,10 +39,11 @@ class Row extends Component
         $this->aura = $this->factory()->getConsumableComponentData('aura'); // @phpstan-ignore assign.propertyType
         $this->object = $this->factory()->getConsumableComponentData('object'); // @phpstan-ignore assign.propertyType
         $this->alias = $this->factory()->getConsumableComponentData('alias'); // @phpstan-ignore assign.propertyType
-        $this->editable = $this->factory()->getConsumableComponentData('editable') && Gate::allows(
-            array_unique([$this->aura->updatePolicy, $property->updatePolicy]),
-            [$this->object, $property->variableName]
-        );
+        $this->editable = $this->factory()->getConsumableComponentData('editable') &&
+            (! policy($this->object) || Gate::allows(
+                array_unique([$this->aura->updatePolicy, $property->updatePolicy]),
+                [$this->object, $property->variableName]
+            ));
 
         $this->id = $this->alias.'_'.Str::snake($property->variableName);
         $this->description = prop_desc($this->object, $property->variableName, $property->description);
