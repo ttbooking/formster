@@ -1,3 +1,5 @@
+@use(function TTBooking\Formster\Support\gate_check)
+
 <table {{ $attributes }}>
     <caption>
         @if (! isset($title) || $title->isEmpty())
@@ -16,7 +18,7 @@
     </thead>
     <tbody>
         @foreach ($aura->properties as $property)
-            @if (! policy($object) || Gate::allows(array_unique([$aura->viewPolicy, $property->viewPolicy]), [$object, $property->variableName]))
+            @if (gate_check(array_unique([$aura->viewPolicy, $property->viewPolicy]), [$object, $property->variableName]))
                 <x-formster::form.row :$property />
             @endif
         @endforeach
