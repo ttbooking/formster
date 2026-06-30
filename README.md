@@ -175,11 +175,11 @@ Route::put('/formster/{model}', function (Request $request, Frankenstein $model)
 
 ### Ключевые сущности
 
-| Сущность | Назначение |
-|---|---|
-| **`Aura`** | «Аура» класса: краткое (`summary`) и полное (`description`) описание, коллекция свойств (проиндексирована по имени) и политики по умолчанию (`viewPolicy`, `updatePolicy`). Одновременно является PHP-атрибутом уровня класса `#[Aura]`. |
-| **`AuraProperty`** | Описание одного свойства: `readable`, `writable`, `type`, `variableName`, `description`, `hasDefaultValue`/`defaultValue`, `viewPolicy`, `updatePolicy`. Одновременно является атрибутом свойства `#[AuraProperty]`. |
-| **`AuraType`** | Система типов: `AuraNamedType` (именованный/дженерик-тип), `AuraUnionType` (`A|B`), `AuraIntersectionType` (`A&B`). У каждого есть `contains()` и флаг `nullable`. |
+| Сущность           | Назначение                                                                                                                                                                                                                               |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`Aura`**         | «Аура» класса: краткое (`summary`) и полное (`description`) описание, коллекция свойств (проиндексирована по имени) и политики по умолчанию (`viewPolicy`, `updatePolicy`). Одновременно является PHP-атрибутом уровня класса `#[Aura]`. |
+| **`AuraProperty`** | Описание одного свойства: `readable`, `writable`, `type`, `variableName`, `description`, `hasDefaultValue`/`defaultValue`, `viewPolicy`, `updatePolicy`. Одновременно является атрибутом свойства `#[AuraProperty]`.                     |
+| **`AuraType`**     | Система типов: `AuraNamedType` (именованный/дженерик-тип), `AuraUnionType` (`A                                                                                                                                                           |
 
 ---
 
@@ -248,14 +248,14 @@ class Profile
 
 За извлечение метаданных отвечают парсеры. Активные парсеры и их порядок задаются опцией `formster.property_parser` (по умолчанию `phpstan,reflection`).
 
-| Драйвер | Источник данных |
-|---|---|
-| `aura` | PHP-атрибуты `#[Aura]` / `#[AuraProperty]` |
-| `reflection` | Нативные типизированные `public`-свойства |
-| `phpdoc` | PHPDoc-блок класса через `phpdocumentor/reflection-docblock` |
-| `phpstan` | PHPDoc через `phpstan/phpdoc-parser` — поддерживает дженерики, const-выражения и **рекурсивный разбор вложенных классов** |
-| `aggregate` | Композит: объединяет несколько парсеров |
-| (внутренний) `caching` | Декоратор, кэширующий результат любого парсера |
+| Драйвер                | Источник данных                                                                                                           |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `aura`                 | PHP-атрибуты `#[Aura]` / `#[AuraProperty]`                                                                                |
+| `reflection`           | Нативные типизированные `public`-свойства                                                                                 |
+| `phpdoc`               | PHPDoc-блок класса через `phpdocumentor/reflection-docblock`                                                              |
+| `phpstan`              | PHPDoc через `phpstan/phpdoc-parser` — поддерживает дженерики, const-выражения и **рекурсивный разбор вложенных классов** |
+| `aggregate`            | Композит: объединяет несколько парсеров                                                                                   |
+| (внутренний) `caching` | Декоратор, кэширующий результат любого парсера                                                                            |
 
 ### Агрегация
 
@@ -289,19 +289,19 @@ interface PropertyHandler
 
 ## Поддерживаемые типы и виджеты
 
-| Тип свойства | Обработчик | Виджет (Blade) | HTML-поле |
-|---|---|---|---|
-| `bool` | `BooleanHandler` | `form.checkbox` | `<input type="checkbox">` |
-| `int` | `IntegerHandler` | `form.number` | `<input type="number">` |
-| `float` | `FloatHandler` | `form.decimal` | `<input type="number" step="0.01">` |
-| `string` | `StringHandler` | `form.text` | `<input type="text">` |
-| `BackedEnum` | `EnumHandler` | `form.radio` / `form.select` | переключатели или выпадающий список |
-| `DateTimeInterface` | `DateTimeHandler` | `form.datetime` | `<input type="datetime-local">` |
-| `DateTimeZone` | `DateTimeZoneHandler` | `form.timezone` | `<select>` с часовыми поясами |
-| `Color` | `ColorHandler` | `form.color` | `<input type="color">` |
-| `File` / `list<File>` | `FileHandler` | `form.file` | `<input type="file">` |
-| `Image` | `ImageHandler` | `form.image` | `<input type="file">` + превью |
-| *прочее* | `FallbackHandler` | `form.disclaimer` | сообщение «тип не поддерживается» |
+| Тип свойства          | Обработчик            | Виджет (Blade)               | HTML-поле                           |
+| --------------------- | --------------------- | ---------------------------- | ----------------------------------- |
+| `bool`                | `BooleanHandler`      | `form.checkbox`              | `<input type="checkbox">`           |
+| `int`                 | `IntegerHandler`      | `form.number`                | `<input type="number">`             |
+| `float`               | `FloatHandler`        | `form.decimal`               | `<input type="number" step="0.01">` |
+| `string`              | `StringHandler`       | `form.text`                  | `<input type="text">`               |
+| `BackedEnum`          | `EnumHandler`         | `form.radio` / `form.select` | переключатели или выпадающий список |
+| `DateTimeInterface`   | `DateTimeHandler`     | `form.datetime`              | `<input type="datetime-local">`     |
+| `DateTimeZone`        | `DateTimeZoneHandler` | `form.timezone`              | `<select>` с часовыми поясами       |
+| `Color`               | `ColorHandler`        | `form.color`                 | `<input type="color">`              |
+| `File` / `list<File>` | `FileHandler`         | `form.file`                  | `<input type="file">`               |
+| `Image`               | `ImageHandler`        | `form.image`                 | `<input type="file">` + превью      |
+| *прочее*              | `FallbackHandler`     | `form.disclaimer`            | сообщение «тип не поддерживается»   |
 
 **Enum.** `EnumHandler` рендерит переключатели (`radio`), если число вариантов не превышает порог `buttonLimit` (по умолчанию **2**), и выпадающий список (`select`) в противном случае.
 
@@ -409,12 +409,12 @@ File::generateStorableNamesNormally();
 
 ### Структурные компоненты
 
-| Компонент | Назначение | Основные параметры |
-|---|---|---|
-| `<x-formster::form>` | Полноценная `<form>` (POST + `@method('PUT')`, кнопка «Сохранить») | `:object`, `action`, `:show-defaults` |
-| `<x-formster::form.table>` | Таблица свойств (просмотр или редактирование) | `:object`, `action`, `:editable`, `:show-defaults` |
-| `<x-formster::form.row>` | Строка таблицы для одного свойства | `:property` |
-| `<x-formster::form.input>` | Виджет ввода для свойства (выбирает компонент через обработчик) | `:property`, `:object` |
+| Компонент                  | Назначение                                                         | Основные параметры                                 |
+| -------------------------- | ------------------------------------------------------------------ | -------------------------------------------------- |
+| `<x-formster::form>`       | Полноценная `<form>` (POST + `@method('PUT')`, кнопка «Сохранить») | `:object`, `action`, `:show-defaults`              |
+| `<x-formster::form.table>` | Таблица свойств (просмотр или редактирование)                      | `:object`, `action`, `:editable`, `:show-defaults` |
+| `<x-formster::form.row>`   | Строка таблицы для одного свойства                                 | `:property`                                        |
+| `<x-formster::form.input>` | Виджет ввода для свойства (выбирает компонент через обработчик)    | `:property`, `:object`                             |
 
 **Примеры:**
 
@@ -491,16 +491,16 @@ class UserPolicy
 
 Файл `lang/vendor/formster/{locale}/form.php`:
 
-| Ключ | RU |
-|---|---|
-| `description` | Параметр |
-| `value` | Значение |
-| `default` | По умолч. |
-| `na` | н/д |
-| `null` | NULL |
-| `on` / `off` | ✔️ / ❌ |
+| Ключ                             | RU                           |
+| -------------------------------- | ---------------------------- |
+| `description`                    | Параметр                     |
+| `value`                          | Значение                     |
+| `default`                        | По умолч.                    |
+| `na`                             | н/д                          |
+| `null`                           | NULL                         |
+| `on` / `off`                     | ✔️ / ❌                      |
 | `open` / `download` / `uploaded` | открыть / скачать / загружен |
-| `save` | Сохранить |
+| `save`                           | Сохранить                    |
 
 ### Описания свойств и enum-значений
 
@@ -598,17 +598,17 @@ return [
 
 ### Переменные окружения
 
-| Переменная | Назначение | По умолчанию |
-|---|---|---|
-| `FORMSTER_PROPERTY_PARSER` | Парсер(ы) свойств | `phpstan,reflection` |
-| `FORMSTER_PROPERTY_CACHE_STORE` | Хранилище кэша | стандартное |
-| `FORMSTER_PROPERTY_CACHE_TTL` | TTL кэша (сек) | бессрочно |
-| `FORMSTER_DISK` | Диск для загрузок | диск по умолчанию |
-| `FORMSTER_STATIC_DISK` | Диск для статических файлов | `FORMSTER_DISK` |
-| `FORMSTER_CONTENT_DISPOSITION` | Поведение файлов | `attachment` |
-| `FORMSTER_SHOW_FILENAME` | Показывать имя файла | `true` |
-| `FORMSTER_PREVIEW_WIDTH` / `_HEIGHT` | Размер превью | `100` / `100` |
-| `FORMSTER_PREVIEW_SCALE_DOWN_THRESHOLD` | Порог уменьшения превью | `10240` |
+| Переменная                              | Назначение                  | По умолчанию         |
+| --------------------------------------- | --------------------------- | -------------------- |
+| `FORMSTER_PROPERTY_PARSER`              | Парсер(ы) свойств           | `phpstan,reflection` |
+| `FORMSTER_PROPERTY_CACHE_STORE`         | Хранилище кэша              | стандартное          |
+| `FORMSTER_PROPERTY_CACHE_TTL`           | TTL кэша (сек)              | бессрочно            |
+| `FORMSTER_DISK`                         | Диск для загрузок           | диск по умолчанию    |
+| `FORMSTER_STATIC_DISK`                  | Диск для статических файлов | `FORMSTER_DISK`      |
+| `FORMSTER_CONTENT_DISPOSITION`          | Поведение файлов            | `attachment`         |
+| `FORMSTER_SHOW_FILENAME`                | Показывать имя файла        | `true`               |
+| `FORMSTER_PREVIEW_WIDTH` / `_HEIGHT`    | Размер превью               | `100` / `100`        |
+| `FORMSTER_PREVIEW_SCALE_DOWN_THRESHOLD` | Порог уменьшения превью     | `10240`              |
 
 ---
 
@@ -685,11 +685,11 @@ class Product extends Model {}
 
 ## Фасады и публичный API
 
-| Фасад | Класс | Назначение |
-|---|---|---|
-| `PropertyParser` | `PropertyParserManager` | `parse($objectOrClass): Aura` — разбор объекта/класса в метаданные |
-| `PropertyHandler` | `HandlerFactory` | `for(AuraProperty $property): PropertyHandler` — подбор обработчика |
-| `ActionHandler` | `ActionHandler` | `update(Request $request, object $object): object` — применение данных запроса к объекту |
+| Фасад             | Класс                   | Назначение                                                                               |
+| ----------------- | ----------------------- | ---------------------------------------------------------------------------------------- |
+| `PropertyParser`  | `PropertyParserManager` | `parse($objectOrClass): Aura` — разбор объекта/класса в метаданные                       |
+| `PropertyHandler` | `HandlerFactory`        | `for(AuraProperty $property): PropertyHandler` — подбор обработчика                      |
+| `ActionHandler`   | `ActionHandler`         | `update(Request $request, object $object): object` — применение данных запроса к объекту |
 
 ```php
 use TTBooking\Formster\Facades\PropertyParser;
