@@ -69,7 +69,7 @@ class FormsterServiceProvider extends ServiceProvider // implements DeferrablePr
 
     protected function registerGateCallbacks(): void
     {
-        config('formster.enforce_policies', false) || Gate::before(new LenientPolicy);
+        config('formster.enforce_policies', false) || Gate::before((new LenientPolicy)(...));
     }
 
     /**
