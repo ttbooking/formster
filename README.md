@@ -6,17 +6,17 @@
 [![Total Downloads](https://img.shields.io/packagist/dt/ttbooking/formster.svg?style=flat-square)](https://packagist.org/packages/ttbooking/formster)
 [![License](https://img.shields.io/packagist/l/ttbooking/formster.svg?style=flat-square)](LICENSE.md)
 
-**Русский** · [English](README.en.md)
+[Русский](README.ru.md) · **English**
 
-**Formster** — это Laravel-библиотека, которая **автоматически генерирует HTML-формы и таблицы-просмотры из любого PHP-объекта или Eloquent-модели**, опираясь на типы свойств. Вам не нужно вручную описывать каждое поле формы: Formster читает структуру объекта из PHPDoc-аннотаций (`@property`), нативных типов PHP или PHP-атрибутов, подбирает подходящий виджет ввода для каждого свойства и берёт на себя обработку отправленных данных.
+**Formster** is a Laravel library that **automatically generates HTML forms and read-only tables from any PHP object or Eloquent model**, based on property types. You don't have to describe every form field by hand: Formster reads the object's structure from PHPDoc annotations (`@property`), native PHP types, or PHP attributes, picks a suitable input widget for each property, and takes care of processing the submitted data.
 
 ```blade
-{{-- Вся форма — со всеми полями, подписями и кнопкой «Сохранить» — генерируется одной строкой --}}
+{{-- The whole form — with every field, label, and a "Save" button — is generated in a single line --}}
 <x-formster::form :object="$user" action="{{ route('users.update', $user) }}" />
 ```
 
 ```php
-// Обработка отправки формы — тоже одна строка
+// Handling the form submission is a one-liner too
 Route::put('/users/{user}', function (Request $request, User $user) {
     ActionHandler::update($request, $user)->save();
 
@@ -26,82 +26,82 @@ Route::put('/users/{user}', function (Request $request, User $user) {
 
 ---
 
-## Содержание
+## Table of contents
 
-- [Возможности](#возможности)
-- [Требования](#требования)
-- [Установка](#установка)
-- [Быстрый старт](#быстрый-старт)
-- [Как это работает](#как-это-работает)
-- [Описание свойств модели](#описание-свойств-модели)
-- [Парсеры свойств](#парсеры-свойств)
-- [Обработчики свойств (Handlers)](#обработчики-свойств-handlers)
-- [Поддерживаемые типы и виджеты](#поддерживаемые-типы-и-виджеты)
-- [Псевдотипы и касты](#псевдотипы-и-касты)
-  - [Color — цвет](#color--цвет)
-  - [DateTimeZone — часовой пояс](#datetimezone--часовой-пояс)
-  - [File — файл](#file--файл)
-  - [Image — изображение](#image--изображение)
-- [Blade-компоненты](#blade-компоненты)
-- [Контроль доступа (политики)](#контроль-доступа-политики)
-- [Локализация](#локализация)
-- [Алиасы](#алиасы)
-- [Конфигурация](#конфигурация)
-- [Создание собственного обработчика](#создание-собственного-обработчика)
-- [Очистка осиротевших файлов](#очистка-осиротевших-файлов)
-- [Фасады и публичный API](#фасады-и-публичный-api)
-- [Тестирование и качество кода](#тестирование-и-качество-кода)
-- [Лицензия](#лицензия)
-
----
-
-## Возможности
-
-- 🚀 **Формы без шаблонов.** Объявите модель — Formster сам построит редактируемую форму или таблицу-просмотр.
-- 🧠 **Несколько источников метаданных.** Свойства извлекаются из PHPDoc (`@property`), нативных типов PHP (рефлексия) и PHP-атрибутов `#[Aura]` / `#[AuraProperty]`. Источники можно комбинировать.
-- 🧩 **Богатая система типов.** Поддержка union (`A|B`), intersection (`A&B`), nullable, дженериков (`Collection<int, User>`, `list<File>`, `class-string<User>`) и рекурсивного разбора вложенных классов.
-- 🎛️ **Готовые виджеты** для строк, чисел, дробных, булевых, enum, дат, часовых поясов, цветов, файлов и изображений.
-- 🖼️ **Псевдотипы файлов и изображений** с загрузкой через `Storage`, автоматическими превью (Intervention Image) и очисткой старых файлов.
-- 🔒 **Интеграция с Laravel Gate.** Просмотр и редактирование каждого свойства управляются политиками (`viewPolicy` / `updatePolicy`), с мягким режимом по умолчанию и переключаемым строгим режимом.
-- 🌍 **Локализация** подписей полей, описаний и enum-значений (из коробки английский и русский).
-- ⚡ **Кэширование** результатов парсинга.
-- 🛠️ **Расширяемость** — собственные обработчики типов генерируются Artisan-командой.
+- [Features](#features)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Quick start](#quick-start)
+- [How it works](#how-it-works)
+- [Describing model properties](#describing-model-properties)
+- [Property parsers](#property-parsers)
+- [Property handlers](#property-handlers)
+- [Supported types and widgets](#supported-types-and-widgets)
+- [Pseudotypes and casts](#pseudotypes-and-casts)
+  - [Color](#color)
+  - [DateTimeZone](#datetimezone)
+  - [File](#file)
+  - [Image](#image)
+- [Blade components](#blade-components)
+- [Access control (policies)](#access-control-policies)
+- [Localization](#localization)
+- [Aliases](#aliases)
+- [Configuration](#configuration)
+- [Writing your own handler](#writing-your-own-handler)
+- [Cleaning up orphaned files](#cleaning-up-orphaned-files)
+- [Facades and public API](#facades-and-public-api)
+- [Testing and code quality](#testing-and-code-quality)
+- [License](#license)
 
 ---
 
-## Требования
+## Features
 
-- PHP **8.2+** (тестируется на 8.2–8.5)
+- 🚀 **Templateless forms.** Declare a model — Formster builds an editable form or a read-only table for it.
+- 🧠 **Multiple metadata sources.** Properties are extracted from PHPDoc (`@property`), native PHP types (reflection), and the `#[Aura]` / `#[AuraProperty]` PHP attributes. Sources can be combined.
+- 🧩 **Rich type system.** Support for union (`A|B`), intersection (`A&B`), nullable, generics (`Collection<int, User>`, `list<File>`, `class-string<User>`), and recursive parsing of nested classes.
+- 🎛️ **Ready-made widgets** for strings, integers, floats, booleans, enums, dates, time zones, colors, files, and images.
+- 🖼️ **File and image pseudotypes** with `Storage` uploads, automatic previews (Intervention Image), and old-file cleanup.
+- 🔒 **Laravel Gate integration.** Viewing and editing of every property is governed by policies (`viewPolicy` / `updatePolicy`), with a lenient mode by default and a switchable enforcing mode.
+- 🌍 **Localization** of field labels, descriptions, and enum values (English and Russian out of the box).
+- ⚡ **Caching** of parsing results.
+- 🛠️ **Extensibility** — custom type handlers are scaffolded by an Artisan command.
+
+---
+
+## Requirements
+
+- PHP **8.2+** (tested on 8.2–8.5)
 - Laravel **^12.17 || ^13.0**
-- `intervention/image-laravel` `^1.5 || ^4.0` (для превью изображений)
+- `intervention/image-laravel` `^1.5 || ^4.0` (for image previews)
 
 ---
 
-## Установка
+## Installation
 
 ```bash
 composer require ttbooking/formster
 ```
 
-Пакет использует автообнаружение, поэтому сервис-провайдер и фасады регистрируются автоматически.
+The package uses auto-discovery, so the service provider and facades are registered automatically.
 
-При необходимости опубликуйте конфигурацию и/или шаблоны представлений:
+If needed, publish the configuration and/or the view templates:
 
 ```bash
-# конфигурация
+# configuration
 php artisan vendor:publish --tag=formster-config
 
-# Blade-шаблоны виджетов (для кастомизации вёрстки)
+# Blade widget templates (to customize markup)
 php artisan vendor:publish --tag=formster-views
 ```
 
 ---
 
-## Быстрый старт
+## Quick start
 
-### 1. Опишите модель
+### 1. Describe the model
 
-Минимально достаточно PHPDoc-аннотаций `@property`. Никаких `$fillable`, кастов или ручного объявления полей формы не требуется — тип в аннотации определяет виджет.
+PHPDoc `@property` annotations are enough as a minimum. No `$fillable`, casts, or manual form-field declarations are required — the annotated type determines the widget.
 
 ```php
 namespace App\Models;
@@ -119,17 +119,17 @@ class Frankenstein extends Model
 }
 ```
 
-### 2. Отрендерите форму или таблицу
+### 2. Render a form or a table
 
 ```blade
-{{-- Редактируемая форма (метод PUT, кнопка «Сохранить») --}}
+{{-- Editable form (PUT method, "Save" button) --}}
 <x-formster::form :object="$model" action="{{ route('update', $model) }}" />
 
-{{-- Таблица только для просмотра --}}
+{{-- Read-only table --}}
 <x-formster::form.table :object="$model" />
 ```
 
-### 3. Обработайте отправку
+### 3. Handle the submission
 
 ```php
 use Illuminate\Http\Request;
@@ -146,91 +146,91 @@ Route::put('/formster/{model}', function (Request $request, Frankenstein $model)
 })->name('update');
 ```
 
-`ActionHandler::update()` сам обходит все свойства модели, применяет нужный обработчик к каждому полю из запроса, учитывает политики доступа и возвращает изменённый объект — остаётся лишь вызвать `->save()`.
+`ActionHandler::update()` walks over all model properties, applies the appropriate handler to each field from the request, respects access policies, and returns the modified object — all that's left is to call `->save()`.
 
 ---
 
-## Как это работает
+## How it works
 
-Полный цикл «модель → форма → отправка» состоит из трёх этапов.
+The full "model → form → submission" cycle consists of three stages.
 
 ```
                 ┌─────────────────────┐
-   объект  ───► │   PropertyParser    │ ──► Aura { properties: AuraProperty[] }
+   object  ───► │   PropertyParser    │ ──► Aura { properties: AuraProperty[] }
                 │  (phpstan,reflection)│
                 └─────────────────────┘
                            │
-                           ▼  для каждого свойства
+                           ▼  for each property
                 ┌─────────────────────┐
-                │   HandlerFactory    │ ──► PropertyHandler (по типу свойства)
+                │   HandlerFactory    │ ──► PropertyHandler (by property type)
                 └─────────────────────┘
                            │
             ┌──────────────┴───────────────┐
             ▼                              ▼
-   component() → Blade-виджет     handle($obj, $request) → запись значения
-   (рендеринг формы)              (обработка отправки)
+   component() → Blade widget      handle($obj, $request) → write value
+   (rendering the form)            (processing the submission)
 ```
 
-1. **Парсинг.** `PropertyParser::parse($object)` разбирает объект и возвращает агрегат **`Aura`** — описание класса со списком свойств **`AuraProperty`** (имя, тип, читаемость/записываемость, значение по умолчанию, политики доступа).
-2. **Подбор обработчика.** Для каждого свойства `HandlerFactory::for($property)` подбирает первый `PropertyHandler`, чей статический метод `satisfies()` соответствует типу свойства.
-3. **Рендеринг и обработка.** При выводе формы обработчик через `component()` указывает Blade-виджет. При отправке `handle()` приводит значение из `Request` и записывает в объект.
+1. **Parsing.** `PropertyParser::parse($object)` inspects the object and returns an aggregate **`Aura`** — a class description with a list of **`AuraProperty`** entries (name, type, readability/writability, default value, access policies).
+2. **Handler selection.** For each property, `HandlerFactory::for($property)` picks the first `PropertyHandler` whose static `satisfies()` method matches the property type.
+3. **Rendering and processing.** When rendering the form the handler's `component()` names the Blade widget. On submission `handle()` casts the value from the `Request` and writes it into the object.
 
-### Ключевые сущности
+### Key entities
 
-| Сущность           | Назначение                                                                                                                                                                                                                               |
-| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`Aura`**         | «Аура» класса: краткое (`summary`) и полное (`description`) описание, коллекция свойств (проиндексирована по имени) и политики по умолчанию (`viewPolicy`, `updatePolicy`). Одновременно является PHP-атрибутом уровня класса `#[Aura]`. |
-| **`AuraProperty`** | Описание одного свойства: `readable`, `writable`, `type`, `variableName`, `description`, `hasDefaultValue`/`defaultValue`, `viewPolicy`, `updatePolicy`. Одновременно является атрибутом свойства `#[AuraProperty]`.                     |
-| **`AuraType`**     | Система типов: `AuraNamedType` (именованный/дженерик-тип), `AuraUnionType` (`A\|B`), `AuraIntersectionType` (`A&B`). Предоставляет метод `contains()` и флаг `nullable`.                                                                 |
+| Entity             | Purpose                                                                                                                                                                                                                     |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`Aura`**         | The class "aura": short (`summary`) and full (`description`) descriptions, a collection of properties (indexed by name), and default policies (`viewPolicy`, `updatePolicy`). Also serves as the class-level `#[Aura]` attribute. |
+| **`AuraProperty`** | A single property description: `readable`, `writable`, `type`, `variableName`, `description`, `hasDefaultValue`/`defaultValue`, `viewPolicy`, `updatePolicy`. Also serves as the `#[AuraProperty]` property attribute.     |
+| **`AuraType`**     | The type system: `AuraNamedType` (named/generic type), `AuraUnionType` (`A\|B`), `AuraIntersectionType` (`A&B`). Provides `contains()` and a `nullable` flag.                                                             |
 
 ---
 
-## Описание свойств модели
+## Describing model properties
 
-Formster поддерживает **три способа** объявить свойства, и их можно сочетать (см. [Парсеры](#парсеры-свойств)).
+Formster supports **three ways** to declare properties, and they can be combined (see [Parsers](#property-parsers)).
 
-### Способ 1. PHPDoc-аннотации (рекомендуется)
+### Way 1. PHPDoc annotations (recommended)
 
 ```php
 /**
- * @property string $name              Имя пользователя
+ * @property string $name              User name
  * @property int $age
- * @property ?string $bio              Может быть null
+ * @property ?string $bio              May be null
  * @property \App\Enums\Status $status
- * @property-read int $id              Только для чтения
- * @property-write string $password    Только для записи
+ * @property-read int $id              Read-only
+ * @property-write string $password    Write-only
  */
 class User extends Model {}
 ```
 
-- `@property` — свойство доступно и для чтения, и для записи;
-- `@property-read` — только чтение (в форме отображается, но не редактируется);
-- `@property-write` — только запись.
+- `@property` — the property is both readable and writable;
+- `@property-read` — read-only (shown in the form but not editable);
+- `@property-write` — write-only.
 
-Текст после типа и имени становится описанием поля.
+The text after the type and name becomes the field description.
 
-### Способ 2. Нативные типы PHP (рефлексия)
+### Way 2. Native PHP types (reflection)
 
 ```php
 class Dto
 {
     public string $name;
-    public int $age = 18;            // значение по умолчанию подхватывается автоматически
-    public readonly string $id;      // readonly → только для чтения
+    public int $age = 18;            // the default value is picked up automatically
+    public readonly string $id;      // readonly → read-only
     public ?Color $color = null;
 }
 ```
 
-### Способ 3. PHP-атрибуты
+### Way 3. PHP attributes
 
-Для полного контроля над метаданными можно навесить атрибуты `#[Aura]` и `#[AuraProperty]` напрямую:
+For full control over the metadata you can attach the `#[Aura]` and `#[AuraProperty]` attributes directly:
 
 ```php
 use TTBooking\Formster\Entities\Aura;
 use TTBooking\Formster\Entities\AuraProperty;
 use TTBooking\Formster\Entities\AuraNamedType;
 
-#[Aura(summary: 'Профиль', description: 'Данные пользователя')]
+#[Aura(summary: 'Profile', description: 'User data')]
 class Profile
 {
     #[AuraProperty(
@@ -238,7 +238,7 @@ class Profile
         writable: true,
         type: new AuraNamedType('string'),
         variableName: 'nickname',
-        description: 'Псевдоним',
+        description: 'Nickname',
     )]
     public string $nickname;
 }
@@ -246,74 +246,74 @@ class Profile
 
 ---
 
-## Парсеры свойств
+## Property parsers
 
-За извлечение метаданных отвечают парсеры. Активные парсеры и их порядок задаются опцией `formster.property_parser` (по умолчанию `phpstan,reflection`).
+Parsers are responsible for extracting metadata. The active parsers and their order are set by the `formster.property_parser` option (default `phpstan,reflection`).
 
-| Драйвер                | Источник данных                                                                                                           |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| `aura`                 | PHP-атрибуты `#[Aura]` / `#[AuraProperty]`                                                                                |
-| `reflection`           | Нативные типизированные `public`-свойства                                                                                 |
-| `phpdoc`               | PHPDoc-блок класса через `phpdocumentor/reflection-docblock`                                                              |
-| `phpstan`              | PHPDoc через `phpstan/phpdoc-parser` — поддерживает дженерики, const-выражения и **рекурсивный разбор вложенных классов** |
-| `aggregate`            | Композит: объединяет несколько парсеров                                                                                   |
-| (внутренний) `caching` | Декоратор, кэширующий результат любого парсера                                                                            |
+| Driver               | Data source                                                                                                     |
+| -------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `aura`               | The `#[Aura]` / `#[AuraProperty]` PHP attributes                                                                |
+| `reflection`         | Native typed `public` properties                                                                               |
+| `phpdoc`             | The class PHPDoc block via `phpdocumentor/reflection-docblock`                                                 |
+| `phpstan`            | PHPDoc via `phpstan/phpdoc-parser` — supports generics, const expressions, and **recursive nested-class parsing** |
+| `aggregate`          | Composite: combines several parsers                                                                            |
+| (internal) `caching` | A decorator that caches the result of any parser                                                              |
 
-### Агрегация
+### Aggregation
 
-Если в `property_parser` указано несколько драйверов через запятую, автоматически используется драйвер `aggregate`. Он последовательно прогоняет объект через каждый парсер и **сливает** результаты через `Aura::merge()`.
+If several drivers are listed comma-separated in `property_parser`, the `aggregate` driver is used automatically. It runs the object through each parser in turn and **merges** the results via `Aura::merge()`.
 
-> **Порядок важен:** парсеры, идущие позже в списке, имеют приоритет — их непустые значения перекрывают данные предыдущих. Например, при `phpstan,reflection` данные из PHPDoc дополняются и при совпадении перекрываются информацией из нативных типов.
+> **Order matters:** parsers listed later have priority — their non-empty values override data from the earlier ones. For example, with `phpstan,reflection` the PHPDoc data is complemented and, on collision, overridden by information from native types.
 
-### Кэширование
+### Caching
 
-Результат парсинга кэшируется автоматически (декоратор `CachingParser`). Хранилище и TTL настраиваются через `formster.property_cache`. Ключ кэша: `formster:properties:{драйвер}:{класс}`.
+Parsing results are cached automatically (the `CachingParser` decorator). The store and TTL are configured via `formster.property_cache`. The cache key is `formster:properties:{driver}:{class}`.
 
 ---
 
-## Обработчики свойств (Handlers)
+## Property handlers
 
-Обработчик (`PropertyHandler`) связывает тип свойства с виджетом и логикой записи. Контракт:
+A handler (`PropertyHandler`) ties a property type to a widget and to the write logic. The contract:
 
 ```php
 interface PropertyHandler
 {
-    public static function satisfies(AuraProperty $property): bool; // подходит ли тип
-    public function component(): string;                            // Blade-виджет
-    public function handle(object $object, Request $request): void; // запись значения
-    public function validate(Request $request): bool;               // валидация
+    public static function satisfies(AuraProperty $property): bool; // does the type match
+    public function component(): string;                            // Blade widget
+    public function handle(object $object, Request $request): void; // write the value
+    public function validate(Request $request): bool;               // validation
 }
 ```
 
-`HandlerFactory::for($property)` перебирает обработчики из конфига `formster.property_handlers` и возвращает первый, для которого `satisfies()` вернул `true`. Если ни один не подошёл, используется `FallbackHandler`.
+`HandlerFactory::for($property)` iterates over the handlers from the `formster.property_handlers` config and returns the first one whose `satisfies()` returned `true`. If none match, `FallbackHandler` is used.
 
 ---
 
-## Поддерживаемые типы и виджеты
+## Supported types and widgets
 
-| Тип свойства          | Обработчик            | Виджет (Blade)               | HTML-поле                           |
+| Property type         | Handler               | Widget (Blade)               | HTML field                          |
 | --------------------- | --------------------- | ---------------------------- | ----------------------------------- |
 | `bool`                | `BooleanHandler`      | `form.checkbox`              | `<input type="checkbox">`           |
 | `int`                 | `IntegerHandler`      | `form.number`                | `<input type="number">`             |
 | `float`               | `FloatHandler`        | `form.decimal`               | `<input type="number" step="0.01">` |
 | `string`              | `StringHandler`       | `form.text`                  | `<input type="text">`               |
-| `BackedEnum`          | `EnumHandler`         | `form.radio` / `form.select` | переключатели или выпадающий список |
+| `BackedEnum`          | `EnumHandler`         | `form.radio` / `form.select` | radio buttons or a dropdown         |
 | `DateTimeInterface`   | `DateTimeHandler`     | `form.datetime`              | `<input type="datetime-local">`     |
-| `DateTimeZone`        | `DateTimeZoneHandler` | `form.timezone`              | `<select>` с часовыми поясами       |
+| `DateTimeZone`        | `DateTimeZoneHandler` | `form.timezone`              | `<select>` with time zones          |
 | `Color`               | `ColorHandler`        | `form.color`                 | `<input type="color">`              |
 | `File` / `list<File>` | `FileHandler`         | `form.file`                  | `<input type="file">`               |
-| `Image`               | `ImageHandler`        | `form.image`                 | `<input type="file">` + превью      |
-| *прочее*              | `FallbackHandler`     | `form.disclaimer`            | сообщение «тип не поддерживается»   |
+| `Image`               | `ImageHandler`        | `form.image`                 | `<input type="file">` + preview     |
+| *anything else*       | `FallbackHandler`     | `form.disclaimer`            | an "unsupported type" message       |
 
-**Enum.** `EnumHandler` рендерит переключатели (`radio`), если число вариантов не превышает порог `buttonLimit` (по умолчанию **2**), и выпадающий список (`select`) в противном случае.
+**Enum.** `EnumHandler` renders radio buttons (`radio`) when the number of options does not exceed the `buttonLimit` threshold (default **2**), and a dropdown (`select`) otherwise.
 
-Описания вариантов enum локализуются (см. [Локализация](#локализация)); при отсутствии перевода берётся PHPDoc-комментарий кейса или его «человекочитаемое» имя.
+Enum option descriptions are localized (see [Localization](#localization)); if no translation is found, the case's PHPDoc comment or its "humanized" name is used.
 
 ---
 
-## Псевдотипы и касты
+## Pseudotypes and casts
 
-Помимо скалярных типов Formster предоставляет четыре **псевдотипа** в пространстве `TTBooking\Formster\Types`. Они реализуют `Castable`, поэтому достаточно объявить их в `casts()` модели — Eloquent сам подберёт нужный каст, а Formster выведет соответствующий виджет.
+Beyond scalar types, Formster provides four **pseudotypes** in the `TTBooking\Formster\Types` namespace. They implement `Castable`, so declaring them in the model's `casts()` is enough — Eloquent picks the right cast, and Formster derives the matching widget.
 
 ```php
 use TTBooking\Formster\Types\{Color, DateTimeZone, File, Image};
@@ -338,51 +338,51 @@ class Product extends Model
 }
 ```
 
-### Color — цвет
+### Color
 
-HEX-цвет в формате `#RRGGBB`. Рендерится как `<input type="color">`, в режиме просмотра — цветная плашка.
+A HEX color in `#RRGGBB` format. Rendered as `<input type="color">`, and as a colored swatch in view mode.
 
 ```php
 $product->brand_color = new Color('#3366ff');
 ```
 
-Конструктор валидирует формат (`/^#[a-zA-Z0-9]{6}$/`) и при ошибке бросает `InvalidArgumentException`.
+The constructor validates the format (`/^#[a-zA-Z0-9]{6}$/`) and throws `InvalidArgumentException` on error.
 
-### DateTimeZone — часовой пояс
+### DateTimeZone
 
-Расширяет нативный `\DateTimeZone`, рендерится в `<select>`, сгруппированный по регионам. Группой можно управлять через параметры псевдотипа в аннотации:
+Extends the native `\DateTimeZone`, rendered as a `<select>` grouped by region. The group can be controlled via the pseudotype's parameters in the annotation:
 
 ```php
 /**
- * Все пояса, сгруппированные по регионам (по умолчанию):
+ * All zones, grouped by region (default):
  * @property ?DateTimeZone $tz
  *
- * Только пояса России (двухбуквенный ISO-код страны):
+ * Russia-only zones (two-letter ISO country code):
  * @property ?DateTimeZone<'RU'> $tz_ru
  */
 ```
 
-### File — файл
+### File
 
-Загрузка файла через `Storage`. В режиме редактирования — `<input type="file">`, в режиме просмотра — ссылка на скачивание/открытие.
+File upload via `Storage`. In edit mode it's an `<input type="file">`, in view mode it's a download/open link.
 
-Параметры псевдотипа задаются дженерик-аннотацией: `File<TAccept, TDisposition, TDisk>`.
+Pseudotype parameters are set via a generic annotation: `File<TAccept, TDisposition, TDisk>`.
 
 ```php
 /**
- * PDF-документы, заголовок «attachment» (скачивание), диск «documents»:
+ * PDF documents, "attachment" disposition (download), "documents" disk:
  * @property ?File<'application/pdf', 'attachment', 'documents'> $contract
  *
- * Несколько файлов (поле получит атрибут multiple):
+ * Multiple files (the field gets the multiple attribute):
  * @property list<File> $attachments
  */
 ```
 
-- `TAccept` — фильтр MIME-типов для атрибута `accept` (по умолчанию `*/*`);
-- `TDisposition` — `attachment` (скачивание) или `inline` (открытие в браузере);
-- `TDisk` — диск файловой системы (по умолчанию из конфига).
+- `TAccept` — a MIME-type filter for the `accept` attribute (default `*/*`);
+- `TDisposition` — `attachment` (download) or `inline` (open in the browser);
+- `TDisk` — the filesystem disk (default from config).
 
-**Имена сохраняемых файлов.** По умолчанию используется `hashName()`. Логику можно переопределить глобально, например в `boot()` сервис-провайдера:
+**Stored file names.** By default `hashName()` is used. The logic can be overridden globally, e.g. in a service provider's `boot()`:
 
 ```php
 use TTBooking\Formster\Types\File;
@@ -391,79 +391,79 @@ File::generateStorableNamesUsing(function ($object, $property, $uploadedFile, $d
     return 'uploads/'.$uploadedFile->getClientOriginalName();
 });
 
-// вернуть поведение по умолчанию:
+// restore the default behavior:
 File::generateStorableNamesNormally();
 ```
 
-При загрузке нового файла старый автоматически удаляется (если он не «статический» и не совпадает со значением по умолчанию). Статическими считаются файлы, чьё имя начинается с `/` — они хранятся на отдельном `static_disk` и не удаляются.
+When a new file is uploaded, the old one is deleted automatically (unless it is "static" or equals the default value). Static files are those whose name starts with `/` — they live on a separate `static_disk` and are never deleted.
 
-### Image — изображение
+### Image
 
-Наследует `File`, но по умолчанию принимает `image/*`, открывается `inline` и **показывает превью**.
+Inherits from `File`, but accepts `image/*` by default, opens `inline`, and **shows a preview**.
 
-Превью генерируется через **Intervention Image**: изображение уменьшается до размеров `formster.preview.width × height`. SVG и файлы меньше порога `scale_down_threshold` отдаются как есть. Поддерживаются обе мажорные версии Intervention Image.
+The preview is generated via **Intervention Image**: the image is scaled down to `formster.preview.width × height`. SVGs and files smaller than the `scale_down_threshold` are served as-is. Both major versions of Intervention Image are supported.
 
 ---
 
-## Blade-компоненты
+## Blade components
 
-Все компоненты доступны в пространстве имён `formster::`.
+All components are available under the `formster::` namespace.
 
-### Структурные компоненты
+### Structural components
 
-| Компонент                  | Назначение                                                         | Основные параметры                                 |
-| -------------------------- | ------------------------------------------------------------------ | -------------------------------------------------- |
-| `<x-formster::form>`       | Полноценная `<form>` (POST + `@method('PUT')`, кнопка «Сохранить») | `:object`, `action`, `:show-defaults`              |
-| `<x-formster::form.table>` | Таблица свойств (просмотр или редактирование)                      | `:object`, `action`, `:editable`, `:show-defaults` |
-| `<x-formster::form.row>`   | Строка таблицы для одного свойства                                 | `:property`                                        |
-| `<x-formster::form.input>` | Виджет ввода для свойства (выбирает компонент через обработчик)    | `:property`, `:object`                             |
+| Component                  | Purpose                                                            | Main parameters                                    |
+| -------------------------- | ----------------------------------------------------------------- | -------------------------------------------------- |
+| `<x-formster::form>`       | A full `<form>` (POST + `@method('PUT')`, "Save" button)          | `:object`, `action`, `:show-defaults`              |
+| `<x-formster::form.table>` | A table of properties (view or edit)                              | `:object`, `action`, `:editable`, `:show-defaults` |
+| `<x-formster::form.row>`   | A table row for a single property                                 | `:property`                                        |
+| `<x-formster::form.input>` | An input widget for a property (picks the component via a handler) | `:property`, `:object`                             |
 
-**Примеры:**
+**Examples:**
 
 ```blade
-{{-- Готовая форма с кнопкой «Сохранить» --}}
+{{-- A ready-made form with a "Save" button --}}
 <x-formster::form :object="$model" action="{{ route('users.update', $model) }}" />
 
-{{-- Только таблица, без столбца значений по умолчанию --}}
+{{-- Table only, without the defaults column --}}
 <x-formster::form.table :object="$model" :editable="false" :show-defaults="false" />
 
-{{-- Своя кнопка вместо стандартной (через слот) --}}
+{{-- A custom button instead of the default one (via a slot) --}}
 <x-formster::form :object="$model" action="{{ route('users.update', $model) }}">
     <x-slot:buttons>
-        <button type="submit">Обновить профиль</button>
+        <button type="submit">Update profile</button>
     </x-slot:buttons>
 </x-formster::form>
 ```
 
-> Если среди свойств есть файл или изображение, форма автоматически получает `enctype="multipart/form-data"`.
+> If any of the properties is a file or an image, the form automatically gets `enctype="multipart/form-data"`.
 
-### Компоненты-виджеты (анонимные)
+### Widget components (anonymous)
 
-Каждый виджет можно вызвать и напрямую: `form.text`, `form.number`, `form.decimal`, `form.checkbox`, `form.radio`, `form.select`, `form.datetime`, `form.color`, `form.timezone`, `form.file`, `form.image`, `form.disclaimer`.
+Each widget can also be called directly: `form.text`, `form.number`, `form.decimal`, `form.checkbox`, `form.radio`, `form.select`, `form.datetime`, `form.color`, `form.timezone`, `form.file`, `form.image`, `form.disclaimer`.
 
 ```blade
 <x-formster::form.text :property="$property" />
 ```
 
-Виджеты используют `@aware` для наследования контекста (`object`, `editable`, `action`) от родительской таблицы и показывают либо редактируемое поле, либо представление «только для чтения».
+Widgets use `@aware` to inherit context (`object`, `editable`, `action`) from the parent table and show either an editable field or a read-only view.
 
-Чтобы изменить вёрстку, опубликуйте шаблоны (`vendor:publish --tag=formster-views`) и отредактируйте файлы в `resources/views/vendor/formster`.
+To change the markup, publish the templates (`vendor:publish --tag=formster-views`) and edit the files in `resources/views/vendor/formster`.
 
 ---
 
-## Контроль доступа (политики)
+## Access control (policies)
 
-Видимость и редактируемость каждого свойства проверяются через **Laravel Gate**. У `Aura` и `AuraProperty` есть политики:
+The visibility and editability of every property are checked through **Laravel Gate**. Both `Aura` and `AuraProperty` carry policies:
 
-- `viewPolicy` (по умолчанию `view`) — можно ли **показывать** свойство;
-- `updatePolicy` (по умолчанию `update`) — можно ли **редактировать** свойство.
+- `viewPolicy` (default `view`) — whether the property may be **shown**;
+- `updatePolicy` (default `update`) — whether the property may be **edited**.
 
-При рендеринге таблицы и при обработке отправки Formster вызывает соответствующий метод политики модели, передавая модель и имя свойства:
+When rendering the table and when processing the submission, Formster calls the corresponding policy method on the model, passing the model and the property name:
 
 ```php
 class UserPolicy
 {
-    // $property — имя свойства, например 'email'
+    // $property — the property name, e.g. 'email'
     public function view(?User $authUser, User $model, string $property): bool
     {
         return $property !== 'secret_field';
@@ -476,90 +476,90 @@ class UserPolicy
 }
 ```
 
-### Мягкий режим (lenient) — по умолчанию
+### Lenient mode — the default
 
-По умолчанию Formster работает в «щадящем» режиме: доступ предоставляется автоматически, если
+By default Formster runs in a lenient mode: access is granted automatically when
 
-- для объекта **не определена** политика, **или**
-- в политике **отсутствует метод** под проверяемую способность.
+- **no** policy is defined for the object, **or**
+- the policy **has no method** for the ability being checked.
 
-Это позволяет пользоваться Formster без написания политик, добавляя ограничения постепенно — только там, где они нужны.
+This lets you use Formster without writing any policies, adding restrictions gradually — only where they are needed.
 
-Реализовано через `Gate::before()`-колбэк `TTBooking\Formster\Support\LenientPolicy`, который регистрируется в сервис-провайдере. Колбэк вмешивается **только** для объектов, помеченных атрибутом `#[Aura]`, и лишь при отсутствии политики/метода: в этом случае он возвращает `true` (полный доступ). Во всех остальных случаях он возвращает `null` и передаёт управление стандартной проверке `Gate::check()`. Объектов без `#[Aura]` он не касается вовсе.
+It is implemented via the `TTBooking\Formster\Support\LenientPolicy` `Gate::before()` callback, registered in the service provider. The callback only steps in for objects marked with the `#[Aura]` attribute, and only when the policy/method is missing: in that case it returns `true` (full access). In all other cases it returns `null` and hands control to the standard `Gate::check()`. Objects without `#[Aura]` are left untouched.
 
-### Строгий режим (enforce)
+### Enforcing mode
 
-Если требуется обычное поведение Laravel Gate (нет политики/метода → доступ **запрещён**), включите строгий режим:
+If you want the regular Laravel Gate behavior (missing policy/method → access **denied**), enable the enforcing mode:
 
 ```dotenv
 FORMSTER_ENFORCE_POLICIES=true
 ```
 
-или в `config/formster.php`:
+or in `config/formster.php`:
 
 ```php
 'enforce_policies' => true,
 ```
 
-При `enforce_policies = true` колбэк `LenientPolicy` не регистрируется, и результат каждой проверки полностью определяется вашими политиками через `Gate::check()`.
+When `enforce_policies = true`, the `LenientPolicy` callback is not registered, and the outcome of every check is fully determined by your policies via `Gate::check()`.
 
 ---
 
-## Локализация
+## Localization
 
-Подписи интерфейса и описания свойств переводятся. Пакет поставляется с английскими и русскими строками; их можно опубликовать и дополнить.
+Interface labels and property descriptions are translatable. The package ships with English and Russian strings; they can be published and extended.
 
-### Подписи интерфейса
+### Interface labels
 
-Файл `lang/vendor/formster/{locale}/form.php`:
+The `lang/vendor/formster/{locale}/form.php` file:
 
-| Ключ                             | RU                           |
+| Key                              | EN                           |
 | -------------------------------- | ---------------------------- |
-| `description`                    | Параметр                     |
-| `value`                          | Значение                     |
-| `default`                        | По умолч.                    |
-| `na`                             | н/д                          |
+| `description`                    | Parameter                    |
+| `value`                          | Value                        |
+| `default`                        | Default                      |
+| `na`                             | N/A                          |
 | `null`                           | NULL                         |
 | `on` / `off`                     | ✔️ / ❌                      |
-| `open` / `download` / `uploaded` | открыть / скачать / загружен |
-| `save`                           | Сохранить                    |
+| `open` / `download` / `uploaded` | open / download / uploaded   |
+| `save`                           | Save                         |
 
-### Описания свойств и enum-значений
+### Property and enum-value descriptions
 
-Описание поля ищется по ключам перевода (с приоритетом строк приложения над пакетными):
-
-```
-formster.{model|object}.{alias}.{свойство_в_snake_case}
-```
-
-Для enum-значений:
+A field description is looked up by translation keys (application strings take priority over the package ones):
 
 ```
-formster.enum.{alias}.{кейс_в_snake_case}
+formster.{model|object}.{alias}.{property_in_snake_case}
 ```
 
-Например, для модели `App\Models\User` и свойства `firstName`:
+For enum values:
+
+```
+formster.enum.{alias}.{case_in_snake_case}
+```
+
+For example, for the `App\Models\User` model and the `firstName` property:
 
 ```php
 // lang/{locale}/formster.php
 return [
     'model' => [
         'user' => [
-            'first_name' => 'Имя',
-            '_summary'     => 'Профиль пользователя',   // заголовок таблицы
-            '_description' => 'Основные данные',         // описание таблицы
+            'first_name' => 'First name',
+            '_summary'     => 'User profile',       // table heading
+            '_description' => 'Basic data',          // table description
         ],
     ],
 ];
 ```
 
-Если перевод не найден, описание берётся из текста PHPDoc-аннотации, а в крайнем случае генерируется из имени свойства (`Str::headline`).
+If no translation is found, the description is taken from the PHPDoc annotation text, and as a last resort it is generated from the property name (`Str::headline`).
 
 ---
 
-## Алиасы
+## Aliases
 
-`alias` — это ключ, под которым модель/enum фигурирует в строках локализации. По умолчанию он вычисляется из имени класса (с отбрасыванием namespace `App\Models\` / `App\Enums\` и переводом остатка в `snake_case`). Зафиксировать собственный алиас можно атрибутом `#[Alias]`:
+An `alias` is the key under which a model/enum appears in localization strings. By default it is derived from the class name (dropping the `App\Models\` / `App\Enums\` namespace and converting the rest to `snake_case`). You can pin your own alias with the `#[Alias]` attribute:
 
 ```php
 use TTBooking\Formster\Attributes\Alias;
@@ -570,23 +570,23 @@ class Customer extends Model {}
 
 ---
 
-## Конфигурация
+## Configuration
 
-После публикации (`vendor:publish --tag=formster-config`) доступен файл `config/formster.php`:
+After publishing (`vendor:publish --tag=formster-config`) the `config/formster.php` file is available:
 
 ```php
 return [
 
-    // Парсер(ы) свойств. Несколько — через запятую (включает агрегацию).
+    // The property parser(s). Several — comma-separated (enables aggregation).
     'property_parser' => env('FORMSTER_PROPERTY_PARSER', 'phpstan,reflection'),
 
-    // Кэш результатов парсинга.
+    // Parsing-result cache.
     'property_cache' => [
-        'store' => env('FORMSTER_PROPERTY_CACHE_STORE'),      // хранилище кэша (по умолчанию — стандартное)
-        'ttl'   => (int) env('FORMSTER_PROPERTY_CACHE_TTL') ?: null, // время жизни (null — бессрочно)
+        'store' => env('FORMSTER_PROPERTY_CACHE_STORE'),      // cache store (default — the standard one)
+        'ttl'   => (int) env('FORMSTER_PROPERTY_CACHE_TTL') ?: null, // TTL (null — forever)
     ],
 
-    // Активные обработчики свойств (порядок = приоритет проверки satisfies()).
+    // Active property handlers (order = satisfies() check priority).
     'property_handlers' => [
         TTBooking\Formster\Handlers\BooleanHandler::class,
         TTBooking\Formster\Handlers\IntegerHandler::class,
@@ -600,59 +600,59 @@ return [
         TTBooking\Formster\Handlers\FileHandler::class,
     ],
 
-    // Строгий режим политик. false — мягкий режим (доступ при отсутствии
-    // политики/метода), true — обычное поведение Laravel Gate.
+    // Policy enforcement. false — lenient mode (access when policy/method is
+    // missing), true — the regular Laravel Gate behavior.
     'enforce_policies' => (bool) env('FORMSTER_ENFORCE_POLICIES', false),
 
-    // Настройки псевдотипа File.
+    // File pseudotype settings.
     'file' => [
-        'disk'                => env('FORMSTER_DISK'),                         // диск для загрузок
-        'static_disk'         => env('FORMSTER_STATIC_DISK', env('FORMSTER_DISK')), // диск для статических файлов
+        'disk'                => env('FORMSTER_DISK'),                         // disk for uploads
+        'static_disk'         => env('FORMSTER_STATIC_DISK', env('FORMSTER_DISK')), // disk for static files
         'content_disposition' => env('FORMSTER_CONTENT_DISPOSITION', 'attachment'),
-        'show_uploaded_name'  => (bool) env('FORMSTER_SHOW_FILENAME', true),   // показывать имя файла в ссылке
+        'show_uploaded_name'  => (bool) env('FORMSTER_SHOW_FILENAME', true),   // show the file name in the link
     ],
 
-    // Настройки превью для псевдотипа Image.
+    // Preview settings for the Image pseudotype.
     'preview' => [
         'width'                => (int) env('FORMSTER_PREVIEW_WIDTH', 100),
         'height'               => (int) env('FORMSTER_PREVIEW_HEIGHT', 100),
-        'scale_down_threshold' => (int) env('FORMSTER_PREVIEW_SCALE_DOWN_THRESHOLD', 10_240), // байт
+        'scale_down_threshold' => (int) env('FORMSTER_PREVIEW_SCALE_DOWN_THRESHOLD', 10_240), // bytes
     ],
 
 ];
 ```
 
-### Переменные окружения
+### Environment variables
 
-| Переменная                              | Назначение                  | По умолчанию         |
+| Variable                                | Purpose                     | Default              |
 | --------------------------------------- | --------------------------- | -------------------- |
-| `FORMSTER_PROPERTY_PARSER`              | Парсер(ы) свойств           | `phpstan,reflection` |
-| `FORMSTER_ENFORCE_POLICIES`             | Строгий режим политик       | `false`              |
-| `FORMSTER_PROPERTY_CACHE_STORE`         | Хранилище кэша              | стандартное          |
-| `FORMSTER_PROPERTY_CACHE_TTL`           | TTL кэша (сек)              | бессрочно            |
-| `FORMSTER_DISK`                         | Диск для загрузок           | диск по умолчанию    |
-| `FORMSTER_STATIC_DISK`                  | Диск для статических файлов | `FORMSTER_DISK`      |
-| `FORMSTER_CONTENT_DISPOSITION`          | Поведение файлов            | `attachment`         |
-| `FORMSTER_SHOW_FILENAME`                | Показывать имя файла        | `true`               |
-| `FORMSTER_PREVIEW_WIDTH` / `_HEIGHT`    | Размер превью               | `100` / `100`        |
-| `FORMSTER_PREVIEW_SCALE_DOWN_THRESHOLD` | Порог уменьшения превью     | `10240`              |
+| `FORMSTER_PROPERTY_PARSER`              | Property parser(s)          | `phpstan,reflection` |
+| `FORMSTER_ENFORCE_POLICIES`             | Policy enforcement mode     | `false`              |
+| `FORMSTER_PROPERTY_CACHE_STORE`         | Cache store                 | standard             |
+| `FORMSTER_PROPERTY_CACHE_TTL`           | Cache TTL (sec)             | forever              |
+| `FORMSTER_DISK`                         | Disk for uploads            | default disk         |
+| `FORMSTER_STATIC_DISK`                  | Disk for static files       | `FORMSTER_DISK`      |
+| `FORMSTER_CONTENT_DISPOSITION`          | File disposition            | `attachment`         |
+| `FORMSTER_SHOW_FILENAME`                | Show the file name          | `true`               |
+| `FORMSTER_PREVIEW_WIDTH` / `_HEIGHT`    | Preview size                | `100` / `100`        |
+| `FORMSTER_PREVIEW_SCALE_DOWN_THRESHOLD` | Preview scale-down threshold | `10240`             |
 
 ---
 
-## Создание собственного обработчика
+## Writing your own handler
 
-Чтобы добавить поддержку нового типа, сгенерируйте обработчик командой:
+To add support for a new type, scaffold a handler with the command:
 
 ```bash
 php artisan make:formster-handler MoneyHandler --type=Money
 ```
 
-- `--type` (`-t`) — обрабатываемый тип или класс;
-- `--force` (`-f`) — перезаписать существующий класс.
+- `--type` (`-t`) — the handled type or class;
+- `--force` (`-f`) — overwrite an existing class.
 
-Команда интерактивна: при отсутствии аргументов спросит имя и предложит выбрать тип из каталога `app/Formster/Types`. Класс создаётся в namespace `App\Formster\Handlers`.
+The command is interactive: with no arguments it asks for a name and lets you pick a type from the `app/Formster/Types` directory. The class is created in the `App\Formster\Handlers` namespace.
 
-Сгенерированный обработчик:
+The generated handler:
 
 ```php
 namespace App\Formster\Handlers;
@@ -688,15 +688,15 @@ class MoneyHandler implements PropertyHandler
 }
 ```
 
-Зарегистрируйте обработчик в `config/formster.php` (в массиве `property_handlers`, до `FileHandler`/`FallbackHandler`) и создайте Blade-виджет `form.money`.
+Register the handler in `config/formster.php` (in the `property_handlers` array, before `FileHandler`/`FallbackHandler`) and create the `form.money` Blade widget.
 
-Стаб генератора можно опубликовать и кастомизировать, поместив `stubs/handler.stub` в корень приложения.
+The generator stub can be published and customized by placing `stubs/handler.stub` in the application root.
 
 ---
 
-## Очистка осиротевших файлов
+## Cleaning up orphaned files
 
-Чтобы загруженные файлы удалялись при удалении модели, подключите обсервер `OrphanedFileCollector`:
+To have uploaded files deleted when a model is deleted, attach the `OrphanedFileCollector` observer:
 
 ```php
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
@@ -706,17 +706,17 @@ use TTBooking\Formster\Observers\OrphanedFileCollector;
 class Product extends Model {}
 ```
 
-При удалении модели обсервер удаляет все привязанные файлы (`File`/`Image`), кроме статических (имя начинается с `/`). При **мягком** удалении (SoftDeletes без force-delete) файлы сохраняются.
+When the model is deleted, the observer removes all attached files (`File`/`Image`) except static ones (name starting with `/`). On a **soft** delete (SoftDeletes without a force delete) the files are kept.
 
 ---
 
-## Фасады и публичный API
+## Facades and public API
 
-| Фасад             | Класс                   | Назначение                                                                               |
-| ----------------- | ----------------------- | ---------------------------------------------------------------------------------------- |
-| `PropertyParser`  | `PropertyParserManager` | `parse($objectOrClass): Aura` — разбор объекта/класса в метаданные                       |
-| `PropertyHandler` | `HandlerFactory`        | `for(AuraProperty $property): PropertyHandler` — подбор обработчика                      |
-| `ActionHandler`   | `ActionHandler`         | `update(Request $request, object $object): object` — применение данных запроса к объекту |
+| Facade            | Class                   | Purpose                                                                                 |
+| ----------------- | ----------------------- | --------------------------------------------------------------------------------------- |
+| `PropertyParser`  | `PropertyParserManager` | `parse($objectOrClass): Aura` — parse an object/class into metadata                     |
+| `PropertyHandler` | `HandlerFactory`        | `for(AuraProperty $property): PropertyHandler` — pick a handler                         |
+| `ActionHandler`   | `ActionHandler`         | `update(Request $request, object $object): object` — apply request data to the object   |
 
 ```php
 use TTBooking\Formster\Facades\PropertyParser;
@@ -730,21 +730,21 @@ foreach ($aura->properties as $property) {
 
 ---
 
-## Тестирование и качество кода
+## Testing and code quality
 
-Пакет использует **Pest**, **PHPStan (larastan, level max)** и **Laravel Pint**. Доступные composer-скрипты:
+The package uses **Pest**, **PHPStan (larastan, level max)**, and **Laravel Pint**. Available composer scripts:
 
 ```bash
-composer test      # запуск тестов (Pest)
-composer analyse   # статический анализ (PHPStan)
-composer lint      # проверка стиля (Pint --test)
-composer serve     # запуск демо-приложения (workbench)
+composer test      # run the tests (Pest)
+composer analyse   # static analysis (PHPStan)
+composer lint      # code-style check (Pint --test)
+composer serve     # run the demo app (workbench)
 ```
 
-CI прогоняет матрицу PHP 8.2–8.5 × Laravel 12.17 / 13.0 (prefer-lowest и prefer-stable).
+CI runs a matrix of PHP 8.2–8.5 × Laravel 12.17 / 13.0 (prefer-lowest and prefer-stable).
 
 ---
 
-## Лицензия
+## License
 
-Formster распространяется по лицензии **MIT**. Подробности — в файле [LICENSE.md](LICENSE.md).
+Formster is released under the **MIT** license. See the [LICENSE.md](LICENSE.md) file for details.
