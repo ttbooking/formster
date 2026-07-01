@@ -5,10 +5,9 @@ declare(strict_types=1);
 namespace TTBooking\Formster;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use TTBooking\Formster\Contracts\HandlerFactory;
 use TTBooking\Formster\Contracts\PropertyParser;
-
-use function TTBooking\Formster\Support\gate_check;
 
 class ActionHandler implements Contracts\ActionHandler
 {
@@ -19,10 +18,10 @@ class ActionHandler implements Contracts\ActionHandler
         $aura = $this->parser->parse($object);
 
         foreach ($aura->properties as $property) {
-            if (gate_check(
+            if (Gate::check(
                 array_unique([$aura->updatePolicy, $property->updatePolicy]),
-                [$object, $property->variableName])
-            ) {
+                [$object, $property->variableName]
+            )) {
                 $this->handler->for($property)->handle($object, $request);
             }
         }

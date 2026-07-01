@@ -6,13 +6,13 @@ namespace TTBooking\Formster\View\Components\Form;
 
 use Closure;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 use Illuminate\View\Component;
 use TTBooking\Formster\Contracts\Comparable;
 use TTBooking\Formster\Entities\Aura;
 use TTBooking\Formster\Entities\AuraProperty;
 
-use function TTBooking\Formster\Support\gate_check;
 use function TTBooking\Formster\Support\prop_desc;
 
 class Row extends Component
@@ -39,7 +39,7 @@ class Row extends Component
         $this->aura = $this->factory()->getConsumableComponentData('aura'); // @phpstan-ignore assign.propertyType
         $this->object = $this->factory()->getConsumableComponentData('object'); // @phpstan-ignore assign.propertyType
         $this->alias = $this->factory()->getConsumableComponentData('alias'); // @phpstan-ignore assign.propertyType
-        $this->editable = $this->factory()->getConsumableComponentData('editable') && gate_check(
+        $this->editable = $this->factory()->getConsumableComponentData('editable') && Gate::check(
             array_unique([$this->aura->updatePolicy, $property->updatePolicy]),
             [$this->object, $property->variableName]
         );

@@ -9,7 +9,9 @@ use Illuminate\Console\Command;
 use Illuminate\Contracts\Cache\Repository;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
+use TTBooking\Formster\Support\LenientPolicy;
 
 class FormsterServiceProvider extends ServiceProvider // implements DeferrableProvider
 {
@@ -40,6 +42,7 @@ class FormsterServiceProvider extends ServiceProvider // implements DeferrablePr
     {
         $this->registerResources();
         $this->registerComponents();
+        $this->registerGateCallbacks();
 
         if ($this->app->runningInConsole()) {
             $this->offerPublishing();
@@ -62,6 +65,11 @@ class FormsterServiceProvider extends ServiceProvider // implements DeferrablePr
     {
         Blade::componentNamespace('TTBooking\\Formster\\View\\Components', 'formster');
         Blade::anonymousComponentPath(__DIR__.'/../resources/views/components', 'formster');
+    }
+
+    protected function registerGateCallbacks(): void
+    {
+        config('formster.enforce_policies', false) || Gate::before(new LenientPolicy);
     }
 
     /**

@@ -76,27 +76,3 @@ function detect_precision(int|float $number): int
 
     return isset($digits[1]) ? strlen($digits[1]) : 0;
 }
-
-/**
- * @param  array<string>|string  $abilities
- */
-function gate_check(array|string $abilities, mixed $arguments = []): bool
-{
-    $abilities = Arr::wrap($abilities);
-    $arguments = Arr::wrap($arguments);
-
-    if (is_object($arguments[0] ?? null)) {
-        if (! $policy = policy($arguments[0])) {
-            return true;
-        }
-
-        foreach ($abilities as $ability) {
-            /** @var object $policy */
-            if (! method_exists($policy, $ability)) {
-                return true;
-            }
-        }
-    }
-
-    return app(Gate::class)->check($abilities, $arguments);
-}
