@@ -107,17 +107,21 @@ PHPDoc `@property` annotations are enough as a minimum. No `$fillable`, casts, o
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use TTBooking\Formster\Entities\Aura;
 
 /**
  * @property string $text
  * @property int $integer
  * @property bool $flag
  */
+#[Aura]
 class Frankenstein extends Model
 {
     protected $table = 'frankenstein';
 }
 ```
+
+> The `#[Aura]` attribute enables the lenient access-policy mode for the model: until you write policies, every property is visible and editable. Without the attribute (and without policies) the regular `Gate` denies access and the form comes out empty. See [Access control](#access-control-policies) for details.
 
 ### 2. Render a form or a table
 
@@ -435,7 +439,7 @@ All components are available under the `formster::` namespace.
 </x-formster::form>
 ```
 
-> If any of the properties is a file or an image, the form automatically gets `enctype="multipart/form-data"`.
+> If any of the properties is a file or an image, the form automatically gets `enctype="multipart/form-data"`. Exception: when the only file fields are declared as `list<File>`, the auto-detection does not kick in — add the `enctype` attribute manually.
 
 ### Widget components (anonymous)
 
@@ -445,7 +449,7 @@ Each widget can also be called directly: `form.text`, `form.number`, `form.decim
 <x-formster::form.text :property="$property" />
 ```
 
-Widgets use `@aware` to inherit context (`object`, `editable`, `action`) from the parent table and show either an editable field or a read-only view.
+Widgets use `@aware` to inherit context from the parent table (`object`, `editable`; the file widgets also inherit `action`) and show either an editable field or a read-only view.
 
 To change the markup, publish the templates (`vendor:publish --tag=formster-views`) and edit the files in `resources/views/vendor/formster`.
 
@@ -458,7 +462,13 @@ The visibility and editability of every property are checked through **Laravel G
 - `viewPolicy` (default `view`) — whether the property may be **shown**;
 - `updatePolicy` (default `update`) — whether the property may be **edited**.
 
-When rendering the table and when processing the submission, Formster calls the corresponding policy method on the model, passing the model and the property name:
+Where and how the checks run:
+
+- **table row visibility** — the class-level and property-level `viewPolicy` combined, arguments `[$object, $propertyName]`;
+- **row editability** and **submission processing** — the class-level and property-level `updatePolicy` combined, same arguments;
+- **the "Save" button** — the class-level `updatePolicy` only, with just the object as the argument (no property name).
+
+The policy method receives the model and the property name:
 
 ```php
 class UserPolicy
@@ -486,6 +496,8 @@ By default Formster runs in a lenient mode: access is granted automatically when
 This lets you use Formster without writing any policies, adding restrictions gradually — only where they are needed.
 
 It is implemented via the `TTBooking\Formster\Support\LenientPolicy` `Gate::before()` callback, registered in the service provider. The callback only steps in for objects marked with the `#[Aura]` attribute, and only when the policy/method is missing: in that case it returns `true` (full access). In all other cases it returns `null` and hands control to the standard `Gate::check()`. Objects without `#[Aura]` are left untouched.
+
+> **Important:** the lenient mode only applies to classes marked with the `#[Aura]` attribute — on the class itself or on any of its ancestors. A model described by PHPDoc annotations alone (without the attribute) is **not** covered by the lenient mode: if no policy is defined for it, the regular `Gate::check()` denies access and its properties are not shown. So either mark your models with `#[Aura]`, or write policies.
 
 ### Enforcing mode
 
@@ -553,7 +565,7 @@ return [
 ];
 ```
 
-If no translation is found, the description is taken from the PHPDoc annotation text, and as a last resort it is generated from the property name (`Str::headline`).
+If no translation is found, the PHPDoc annotation text is used; if that is absent too, the description is generated from the property name (`Str::headline`).
 
 ---
 
@@ -741,7 +753,7 @@ composer lint      # code-style check (Pint --test)
 composer serve     # run the demo app (workbench)
 ```
 
-CI runs a matrix of PHP 8.2–8.5 × Laravel 12.17 / 13.0 (prefer-lowest and prefer-stable).
+CI runs a matrix of PHP 8.2–8.5 × Laravel 12.17 / 13.0 (prefer-lowest and prefer-stable); the PHP 8.2 × Laravel 13 combination is excluded.
 
 ---
 
