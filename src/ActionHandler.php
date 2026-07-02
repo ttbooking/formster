@@ -18,7 +18,7 @@ class ActionHandler implements Contracts\ActionHandler
         $aura = $this->parser->parse($object);
 
         foreach ($aura->properties as $property) {
-            if (Gate::check(
+            if ($property->writable && Gate::check(
                 array_unique([$aura->updatePolicy, $property->updatePolicy]),
                 [$object, $property->variableName]
             )) {
