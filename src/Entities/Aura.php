@@ -29,9 +29,11 @@ readonly class Aura
     public function merge(self $aura): static
     {
         return new static(
-            $aura->summary !== '' ? $aura->summary : $this->summary,
-            $aura->description !== '' ? $aura->description : $this->description,
-            $this->properties->merge($aura->properties)->values(),
+            summary: $aura->summary !== '' ? $aura->summary : $this->summary,
+            description: $aura->description !== '' ? $aura->description : $this->description,
+            properties: $this->properties->merge($aura->properties)->values(),
+            viewPolicy: $aura->viewPolicy !== 'view' ? $aura->viewPolicy : $this->viewPolicy,
+            updatePolicy: $aura->updatePolicy !== 'update' ? $aura->updatePolicy : $this->updatePolicy,
         );
     }
 }
