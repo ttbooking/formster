@@ -8,9 +8,8 @@ use Closure;
 use Illuminate\Contracts\View\View;
 use Illuminate\View\Component;
 use TTBooking\Formster\Entities\Aura;
-use TTBooking\Formster\Entities\AuraProperty;
 use TTBooking\Formster\Facades\PropertyParser;
-use TTBooking\Formster\Types\File;
+use TTBooking\Formster\Handlers\FileHandler;
 
 class Form extends Component
 {
@@ -26,8 +25,7 @@ class Form extends Component
     {
         $this->aura = PropertyParser::parse($object);
 
-        $containsFileProperty = collect($this->aura->properties)
-            ->contains(static fn (AuraProperty $property) => $property->type->contains(File::class));
+        $containsFileProperty = collect($this->aura->properties)->contains(FileHandler::satisfies(...));
 
         $this->mergeAttrs = $containsFileProperty ? ['enctype' => 'multipart/form-data'] : [];
     }
