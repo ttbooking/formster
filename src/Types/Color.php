@@ -15,7 +15,7 @@ class Color implements Castable, Comparable, JsonSerializable, Stringable
 {
     public function __construct(public string $value)
     {
-        if (! preg_match('/^#[a-zA-Z0-9]{6}$/', $value)) {
+        if (! preg_match('/^#[0-9a-fA-F]{6}$/', $value)) {
             throw new InvalidArgumentException(
                 'Color should be represented in a 6-digit hexadecimal format prefixed with the hash sign.'
             );
