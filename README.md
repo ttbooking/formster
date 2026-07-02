@@ -150,7 +150,7 @@ Route::put('/formster/{model}', function (Request $request, Frankenstein $model)
 })->name('update');
 ```
 
-`ActionHandler::update()` walks over all model properties, applies the appropriate handler to each field from the request, respects access policies, and returns the modified object — all that's left is to call `->save()`.
+`ActionHandler::update()` walks over the model's writable properties (read-only ones are skipped), applies the appropriate handler to each field from the request, respects access policies, and returns the modified object — all that's left is to call `->save()`.
 
 ---
 
@@ -291,6 +291,8 @@ interface PropertyHandler
 
 `HandlerFactory::for($property)` iterates over the handlers from the `formster.property_handlers` config and returns the first one whose `satisfies()` returned `true`. If none match, `FallbackHandler` is used.
 
+> `validate()` is reserved for the upcoming validation subsystem — the package does not call it yet.
+
 ---
 
 ## Supported types and widgets
@@ -350,7 +352,7 @@ A HEX color in `#RRGGBB` format. Rendered as `<input type="color">`, and as a co
 $product->brand_color = new Color('#3366ff');
 ```
 
-The constructor validates the format (`/^#[a-zA-Z0-9]{6}$/`) and throws `InvalidArgumentException` on error.
+The constructor validates the format (`/^#[0-9a-fA-F]{6}$/`) and throws `InvalidArgumentException` on error.
 
 ### DateTimeZone
 
@@ -385,6 +387,8 @@ Pseudotype parameters are set via a generic annotation: `File<TAccept, TDisposit
 - `TAccept` — a MIME-type filter for the `accept` attribute (default `*/*`);
 - `TDisposition` — `attachment` (download) or `inline` (open in the browser);
 - `TDisk` — the filesystem disk (default from config).
+
+> A `list<File>` field renders a multi-file input and the form gets the proper `enctype`, but server-side processing of multiple uploaded files is not implemented yet — `FileHandler` currently skips array uploads.
 
 **Stored file names.** By default `hashName()` is used. The logic can be overridden globally, e.g. in a service provider's `boot()`:
 
@@ -439,7 +443,7 @@ All components are available under the `formster::` namespace.
 </x-formster::form>
 ```
 
-> If any of the properties is a file or an image, the form automatically gets `enctype="multipart/form-data"`. Exception: when the only file fields are declared as `list<File>`, the auto-detection does not kick in — add the `enctype` attribute manually.
+> If any of the properties is a file or an image — including fields declared as `list<File>` — the form automatically gets `enctype="multipart/form-data"`.
 
 ### Widget components (anonymous)
 
