@@ -26,7 +26,7 @@ class DateTimeHandler implements PropertyHandler
         return 'formster::form.datetime';
     }
 
-    public function validationRules(): array
+    public function validationRules(): string|array
     {
         return $this->mergeValidationRules('required|date');
     }

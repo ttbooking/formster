@@ -36,7 +36,7 @@ class EnumHandler implements PropertyHandler
             : 'formster::form.radio';
     }
 
-    public function validationRules(): array
+    public function validationRules(): string|array
     {
         /** @var class-string<BackedEnum> $enumClass */
         $enumClass = $this->namedType()->name;

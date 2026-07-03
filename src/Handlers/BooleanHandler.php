@@ -25,7 +25,7 @@ class BooleanHandler implements PropertyHandler
         return 'formster::form.checkbox';
     }
 
-    public function validationRules(): array
+    public function validationRules(): string|array
     {
         return $this->mergeValidationRules('sometimes|in:on');
     }

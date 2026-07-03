@@ -16,7 +16,7 @@ use TTBooking\Formster\Contracts\PropertyHandler;
  */
 trait MergesValidationRules
 {
-    public function validationRules(): array
+    public function validationRules(): string|array
     {
         return $this->mergeValidationRules();
     }
@@ -25,9 +25,9 @@ trait MergesValidationRules
      * Merge handler and property validation rules using ellipsis (...) notation.
      *
      * @param  string|list<string|Stringable|Rule|InvokableRule|ValidationRule>  $rules
-     * @return list<string|Stringable|Rule|InvokableRule|ValidationRule>
+     * @return string|list<string|Stringable|Rule|InvokableRule|ValidationRule>
      */
-    protected function mergeValidationRules(string|array $rules = []): array
+    protected function mergeValidationRules(string|array $rules = []): string|array
     {
         // Return handler rules if there are no property rules defined
         if (! $propertyRules = (array) ($this->property->validationRules ?: [])) {
@@ -42,6 +42,7 @@ trait MergesValidationRules
         // Substitute insertion directive with handler rules
         $propertyRules[$key] = $rules;
 
+        /** @var list<string|Stringable|Rule|InvokableRule|ValidationRule> */
         return Arr::flatten($propertyRules);
     }
 }

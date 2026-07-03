@@ -25,7 +25,7 @@ class IntegerHandler implements PropertyHandler
         return 'formster::form.number';
     }
 
-    public function validationRules(): array
+    public function validationRules(): string|array
     {
         return $this->mergeValidationRules('required|integer:strict');
     }

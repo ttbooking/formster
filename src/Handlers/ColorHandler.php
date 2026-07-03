@@ -26,7 +26,7 @@ class ColorHandler implements PropertyHandler
         return 'formster::form.color';
     }
 
-    public function validationRules(): array
+    public function validationRules(): string|array
     {
         return $this->mergeValidationRules('required|hex_color');
     }

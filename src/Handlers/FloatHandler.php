@@ -25,7 +25,7 @@ class FloatHandler implements PropertyHandler
         return 'formster::form.decimal';
     }
 
-    public function validationRules(): array
+    public function validationRules(): string|array
     {
         return $this->mergeValidationRules('required|numeric:strict');
     }

@@ -25,7 +25,7 @@ class StringHandler implements PropertyHandler
         return 'formster::form.text';
     }
 
-    public function validationRules(): array
+    public function validationRules(): string|array
     {
         return $this->mergeValidationRules('required|string');
     }

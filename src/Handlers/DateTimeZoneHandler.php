@@ -26,7 +26,7 @@ class DateTimeZoneHandler implements PropertyHandler
         return 'formster::form.timezone';
     }
 
-    public function validationRules(): array
+    public function validationRules(): string|array
     {
         return $this->mergeValidationRules('required|timezone');
     }
