@@ -6,15 +6,17 @@ namespace TTBooking\Formster\Handlers;
 
 use BackedEnum;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use ReflectionEnum;
 use TTBooking\Formster\Concerns\AssertsPropertyTypes;
+use TTBooking\Formster\Concerns\MergesValidationRules;
 use TTBooking\Formster\Contracts\PropertyHandler;
 use TTBooking\Formster\Entities\AuraNamedType;
 use TTBooking\Formster\Entities\AuraProperty;
 
 class EnumHandler implements PropertyHandler
 {
-    use AssertsPropertyTypes;
+    use AssertsPropertyTypes, MergesValidationRules;
 
     public function __construct(public AuraProperty $property, protected int $buttonLimit = 2) {}
 
@@ -34,6 +36,14 @@ class EnumHandler implements PropertyHandler
             : 'formster::form.radio';
     }
 
+    public function validationRules(): array
+    {
+        /** @var class-string<BackedEnum> $enumClass */
+        $enumClass = $this->namedType()->name;
+
+        return $this->mergeValidationRules(['required', Rule::enum($enumClass)]);
+    }
+
     public function handle(object $object, Request $request): void
     {
         /** @var class-string<BackedEnum> $enumClass */
@@ -44,10 +54,5 @@ class EnumHandler implements PropertyHandler
         $object->{$this->property->variableName} = $intBacked
             ? $enumClass::from($request->integer($this->property->variableName))
             : $enumClass::from((string) $request->string($this->property->variableName));
-    }
-
-    public function validate(Request $request): bool
-    {
-        return true;
     }
 }

@@ -22,13 +22,13 @@ class FallbackHandler implements PropertyHandler
         return 'formster::form.disclaimer';
     }
 
+    public function validationRules(): array
+    {
+        return [];
+    }
+
     public function handle(object $object, Request $request): void
     {
         @trigger_error("Property type {$this->property->type} unsupported.");
-    }
-
-    public function validate(Request $request): bool
-    {
-        return true;
     }
 }

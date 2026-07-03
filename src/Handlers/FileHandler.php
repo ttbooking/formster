@@ -6,6 +6,7 @@ namespace TTBooking\Formster\Handlers;
 
 use Illuminate\Http\Request;
 use TTBooking\Formster\Concerns\AssertsPropertyTypes;
+use TTBooking\Formster\Concerns\MergesValidationRules;
 use TTBooking\Formster\Contracts\PropertyHandler;
 use TTBooking\Formster\Entities\AuraNamedType;
 use TTBooking\Formster\Entities\AuraProperty;
@@ -13,7 +14,7 @@ use TTBooking\Formster\Types\File;
 
 class FileHandler implements PropertyHandler
 {
-    use AssertsPropertyTypes;
+    use AssertsPropertyTypes, MergesValidationRules;
 
     /** @var class-string<File> */
     protected const TYPE = File::class;
@@ -34,6 +35,11 @@ class FileHandler implements PropertyHandler
         return 'formster::form.file';
     }
 
+    public function validationRules(): array
+    {
+        return $this->mergeValidationRules('required|file');
+    }
+
     public function handle(object $object, Request $request): void
     {
         if (! ($file = $request->file($this->property->variableName)) || is_array($file)) {
@@ -50,11 +56,6 @@ class FileHandler implements PropertyHandler
         }
 
         $object->{$this->property->variableName} = $this->newInstance($name, $disk);
-    }
-
-    public function validate(Request $request): bool
-    {
-        return true;
     }
 
     protected function deleteFileIfNotStaticOrDefault(object $object): bool

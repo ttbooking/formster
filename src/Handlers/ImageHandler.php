@@ -14,4 +14,9 @@ class ImageHandler extends FileHandler
     {
         return 'formster::form.image';
     }
+
+    public function validationRules(): array
+    {
+        return $this->mergeValidationRules('required|image:allow_svg');
+    }
 }

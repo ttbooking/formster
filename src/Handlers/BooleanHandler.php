@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace TTBooking\Formster\Handlers;
 
 use Illuminate\Http\Request;
+use TTBooking\Formster\Concerns\MergesValidationRules;
 use TTBooking\Formster\Contracts\PropertyHandler;
 use TTBooking\Formster\Entities\AuraProperty;
 
 class BooleanHandler implements PropertyHandler
 {
+    use MergesValidationRules;
+
     public function __construct(public AuraProperty $property) {}
 
     public static function satisfies(AuraProperty $property): bool
@@ -22,13 +25,13 @@ class BooleanHandler implements PropertyHandler
         return 'formster::form.checkbox';
     }
 
+    public function validationRules(): array
+    {
+        return $this->mergeValidationRules('sometimes|in:on');
+    }
+
     public function handle(object $object, Request $request): void
     {
         $object->{$this->property->variableName} = $request->has($this->property->variableName);
-    }
-
-    public function validate(Request $request): bool
-    {
-        return true;
     }
 }

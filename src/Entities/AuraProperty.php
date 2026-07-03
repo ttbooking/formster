@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace TTBooking\Formster\Entities;
 
 use Attribute;
+use Illuminate\Contracts\Validation\InvokableRule;
+use Illuminate\Contracts\Validation\Rule;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Stringable;
 use UnexpectedValueException;
 
@@ -19,6 +22,8 @@ readonly class AuraProperty implements Stringable
         public string $description,
         public bool $hasDefaultValue = false,
         public mixed $defaultValue = null,
+        /** @var string|list<string|Stringable|Rule|InvokableRule|ValidationRule> */
+        public string|array $validationRules = [],
         public string $viewPolicy = 'view',
         public string $updatePolicy = 'update',
     ) {}

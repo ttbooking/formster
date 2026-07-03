@@ -6,11 +6,14 @@ namespace {{ namespace }};
 
 use {{ namespacedType }};
 use Illuminate\Http\Request;
+use TTBooking\Formster\Concerns\MergesValidationRules;
 use TTBooking\Formster\Contracts\PropertyHandler;
 use TTBooking\Formster\Entities\AuraProperty;
 
 class {{ class }} implements PropertyHandler
 {
+    use MergesValidationRules;
+
     public function __construct(public AuraProperty $property) {}
 
     public static function satisfies(AuraProperty $property): bool
@@ -23,13 +26,13 @@ class {{ class }} implements PropertyHandler
         return 'formster::form.{{ kebabType }}';
     }
 
+    public function validationRules(): array
+    {
+        return $this->mergeValidationRules();
+    }
+
     public function handle(object $object, Request $request): void
     {
         $object->{$this->property->variableName} = new {{ type }}($request->{$this->property->variableName});
-    }
-
-    public function validate(Request $request): bool
-    {
-        return true;
     }
 }

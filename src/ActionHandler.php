@@ -17,6 +17,15 @@ class ActionHandler implements Contracts\ActionHandler
     {
         $aura = $this->parser->parse($object);
 
+        $rules = [];
+        foreach ($aura->properties as $property) {
+            $rules[$property->variableName] = $this->handler->for($property)->validationRules();
+        }
+
+        // $rules = $aura->properties->pluck('validationRules', 'variableName')->all();
+
+        $request->validate($rules);
+
         foreach ($aura->properties as $property) {
             if ($property->writable && Gate::check(
                 array_unique([$aura->updatePolicy, $property->updatePolicy]),
