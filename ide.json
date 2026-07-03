@@ -1,0 +1,58 @@
+{
+    "$schema": "https://laravel-ide.com/schema/laravel-ide-v2.json",
+    "codeGenerations": [
+        {
+            "id": "ttbooking/formster:handler",
+            "name": "Create Formster Handler",
+            "classSuffix": "Handler",
+            "parameters": [
+                {
+                    "id": "type-param",
+                    "name": "Type",
+                    "type": "class",
+                    "variable": "TYPE_CLASS",
+                    "optional": false
+                }
+            ],
+            "files": [
+                {
+                    "directory": "src/Handlers",
+                    "template": {
+                        "path": "/src/Console/stubs/handler.stub",
+                        "parameters": {
+                            "{{ namespace }}": "${INPUT_FQN|namespace}",
+                            "{{ class }}": "${INPUT_FQN|className}",
+                            "{{ namespacedType }}": "${TYPE_CLASS}",
+                            "{{ type }}": "${TYPE_CLASS|className}",
+                            "{{ kebabType }}": "${TYPE_CLASS|className|kebabCase}"
+                        }
+                    }
+                }
+            ]
+        }
+    ],
+    "view": {
+        "paths": [
+            {
+                "path": "/resources/views",
+                "namespace": "formster"
+            }
+        ]
+    },
+    "blade": {
+        "components": {
+            "viewPaths": [
+                {
+                    "path": "/resources/views/components",
+                    "namespace": "formster"
+                }
+            ],
+            "phpNamespaces": [
+                {
+                    "phpNamespace": "\\TTBooking\\Formster\\View\\Components",
+                    "tagNamespace": "formster"
+                }
+            ]
+        }
+    }
+}
