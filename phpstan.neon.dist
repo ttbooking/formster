@@ -28,5 +28,8 @@ parameters:
             identifier: larastan.noEnvCallsOutsideOfConfig
             reportUnmatched: false
         -
+            identifier: argument.type
+            path: src/Entities/AuraProperty.php
+        -
             identifier: staticMethod.notFound
             path: src/Types/Image.php

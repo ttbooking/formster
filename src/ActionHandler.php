@@ -15,7 +15,7 @@ class ActionHandler implements Contracts\ActionHandler
 
     public function update(Request $request, object $object): object
     {
-        $aura = $this->parser->parse($object);
+        $aura = $this->parser->parse($object)->finalize();
 
         $rules = [];
         foreach ($aura->properties as $property) {

@@ -6,11 +6,11 @@ namespace TTBooking\Formster\Facades;
 
 use Illuminate\Support\Facades\Facade;
 use TTBooking\Formster\Contracts\PropertyHandler as PropertyHandlerContract;
-use TTBooking\Formster\Entities\AuraProperty;
+use TTBooking\Formster\Entities\FinalAuraProperty;
 use TTBooking\Formster\HandlerFactory;
 
 /**
- * @method static PropertyHandlerContract for(AuraProperty $property)
+ * @method static PropertyHandlerContract for(FinalAuraProperty $property)
  *
  * @see HandlerFactory
  */

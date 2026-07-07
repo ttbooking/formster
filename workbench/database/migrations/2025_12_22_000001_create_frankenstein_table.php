@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('frankenstein', function (Blueprint $table) {
             $table->id();
             $table->string('text');
-            $table->integer('integer');
+            $table->integer('number');
             $table->boolean('flag');
             $table->timestamps();
         });

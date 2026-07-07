@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Number;
 use Illuminate\Support\Str;
 use ReflectionEnumUnitCase;
-use TTBooking\Formster\Entities\AuraProperty;
+use TTBooking\Formster\Entities\FinalAuraProperty;
 use UnitEnum;
 
 /**
@@ -54,7 +54,7 @@ function enum_desc(UnitEnum $case, null|string|Closure $fallback = null): string
     );
 }
 
-function prop_val(AuraProperty $property, ?object $object = null): mixed
+function prop_val(FinalAuraProperty $property, ?object $object = null): mixed
 {
     return isset($object) ? $object->{$property->variableName} : $property->defaultValue;
 }

@@ -6,17 +6,14 @@ namespace TTBooking\Formster\Handlers;
 
 use DateTimeInterface;
 use Illuminate\Http\Request;
-use TTBooking\Formster\Concerns\MergesValidationRules;
 use TTBooking\Formster\Contracts\PropertyHandler;
-use TTBooking\Formster\Entities\AuraProperty;
+use TTBooking\Formster\Entities\FinalAuraProperty;
 
 class DateTimeHandler implements PropertyHandler
 {
-    use MergesValidationRules;
+    public function __construct(public FinalAuraProperty $property) {}
 
-    public function __construct(public AuraProperty $property) {}
-
-    public static function satisfies(AuraProperty $property): bool
+    public static function satisfies(FinalAuraProperty $property): bool
     {
         return $property->type->contains(DateTimeInterface::class);
     }
@@ -28,7 +25,7 @@ class DateTimeHandler implements PropertyHandler
 
     public function validationRules(): string|array
     {
-        return $this->mergeValidationRules('required|date');
+        return $this->property->mergeValidationRules('required|date');
     }
 
     public function handle(object $object, Request $request): void

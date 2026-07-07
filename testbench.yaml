@@ -11,7 +11,7 @@ seeders:
   - Workbench\Database\Seeders\DatabaseSeeder
 
 env:
-  - FORMSTER_PROPERTY_PARSER=phpstan
+  - FORMSTER_PROPERTY_PARSER=aura,phpstan
 
 workbench:
   start: '/formster/1'

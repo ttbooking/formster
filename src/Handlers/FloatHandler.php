@@ -5,17 +5,14 @@ declare(strict_types=1);
 namespace TTBooking\Formster\Handlers;
 
 use Illuminate\Http\Request;
-use TTBooking\Formster\Concerns\MergesValidationRules;
 use TTBooking\Formster\Contracts\PropertyHandler;
-use TTBooking\Formster\Entities\AuraProperty;
+use TTBooking\Formster\Entities\FinalAuraProperty;
 
 class FloatHandler implements PropertyHandler
 {
-    use MergesValidationRules;
+    public function __construct(public FinalAuraProperty $property) {}
 
-    public function __construct(public AuraProperty $property) {}
-
-    public static function satisfies(AuraProperty $property): bool
+    public static function satisfies(FinalAuraProperty $property): bool
     {
         return collect(['float', 'double', 'real'])->contains($property->type->contains(...));
     }
@@ -27,7 +24,7 @@ class FloatHandler implements PropertyHandler
 
     public function validationRules(): string|array
     {
-        return $this->mergeValidationRules('required|numeric:strict');
+        return $this->property->mergeValidationRules('required|numeric');
     }
 
     public function handle(object $object, Request $request): void

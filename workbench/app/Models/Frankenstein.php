@@ -5,14 +5,19 @@ namespace Workbench\App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use TTBooking\Formster\Entities\Aura;
+use TTBooking\Formster\Entities\AuraProperty;
 use Workbench\Database\Factories\FrankensteinFactory;
 
 /**
- * @property string $text
- * @property int $integer
- * @property bool $flag
+ * @property string $text Some text
+ * @property int $number Some number
+ * @property bool $flag Some flag
  */
-#[Aura]
+#[Aura(properties: [
+    'text' => new AuraProperty(validationRules: ['...', 'required|string|min:3']),
+    'number' => new AuraProperty(validationRules: ['...', 'required|integer']),
+    'flag' => new AuraProperty(validationRules: ['...', 'sometimes|in:on']),
+])]
 class Frankenstein extends Model
 {
     /** @use HasFactory<FrankensteinFactory> */

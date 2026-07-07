@@ -10,14 +10,14 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 use Illuminate\View\Component;
 use TTBooking\Formster\Contracts\Comparable;
-use TTBooking\Formster\Entities\Aura;
-use TTBooking\Formster\Entities\AuraProperty;
+use TTBooking\Formster\Entities\FinalAura;
+use TTBooking\Formster\Entities\FinalAuraProperty;
 
 use function TTBooking\Formster\Support\prop_desc;
 
 class Row extends Component
 {
-    public Aura $aura;
+    public FinalAura $aura;
 
     public object $object;
 
@@ -34,7 +34,7 @@ class Row extends Component
     /**
      * Create a new component instance.
      */
-    public function __construct(public AuraProperty $property)
+    public function __construct(public FinalAuraProperty $property)
     {
         $this->aura = $this->factory()->getConsumableComponentData('aura'); // @phpstan-ignore assign.propertyType
         $this->object = $this->factory()->getConsumableComponentData('object'); // @phpstan-ignore assign.propertyType

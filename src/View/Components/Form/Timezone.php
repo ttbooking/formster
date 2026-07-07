@@ -11,7 +11,7 @@ use Illuminate\Support\Collection;
 use Illuminate\View\Component;
 use InvalidArgumentException;
 use TTBooking\Formster\Concerns\AssertsPropertyTypes;
-use TTBooking\Formster\Entities\AuraProperty;
+use TTBooking\Formster\Entities\FinalAuraProperty;
 
 class Timezone extends Component
 {
@@ -23,7 +23,7 @@ class Timezone extends Component
     /**
      * Create a new component instance.
      */
-    public function __construct(public AuraProperty $property)
+    public function __construct(public FinalAuraProperty $property)
     {
         $timezoneGroup = $this->namedType()->atomicParameters()->get(0)?->asConstExpr() ?? DateTimeZone::ALL;
         $groupByRegion = $this->namedType()->atomicParameters()->get(1)?->asConstExpr() ?? $timezoneGroup === DateTimeZone::ALL;

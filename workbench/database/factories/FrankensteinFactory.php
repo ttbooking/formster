@@ -16,7 +16,7 @@ class FrankensteinFactory extends Factory
     {
         return [
             'text' => fake()->word(),
-            'integer' => fake()->randomNumber(),
+            'number' => fake()->randomNumber(),
             'flag' => fake()->boolean(),
         ];
     }

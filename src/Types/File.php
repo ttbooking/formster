@@ -13,7 +13,7 @@ use JsonSerializable;
 use Stringable;
 use TTBooking\Formster\Casts\AsFile;
 use TTBooking\Formster\Contracts\Comparable;
-use TTBooking\Formster\Entities\AuraProperty;
+use TTBooking\Formster\Entities\FinalAuraProperty;
 
 /**
  * @template TAccept of string = "\*\/\*"
@@ -22,7 +22,7 @@ use TTBooking\Formster\Entities\AuraProperty;
  */
 class File implements Castable, Comparable, JsonSerializable, Stringable
 {
-    /** @var null|Closure(object, AuraProperty, UploadedFile, string|null): string */
+    /** @var null|Closure(object, FinalAuraProperty, UploadedFile, string|null): string */
     protected static ?Closure $storableNamesGenerator = null;
 
     /**
@@ -117,7 +117,7 @@ class File implements Castable, Comparable, JsonSerializable, Stringable
 
     public static function generateStorableName(
         object $object,
-        AuraProperty $property,
+        FinalAuraProperty $property,
         UploadedFile $file,
         ?string $disk = null,
     ): string {
@@ -127,7 +127,7 @@ class File implements Castable, Comparable, JsonSerializable, Stringable
     }
 
     /**
-     * @param  Closure(object $object, AuraProperty $property, UploadedFile $file, string|null $disk): string  $callback
+     * @param  Closure(object $object, FinalAuraProperty $property, UploadedFile $file, string|null $disk): string  $callback
      * @return class-string<static>
      */
     public static function generateStorableNamesUsing(Closure $callback): string

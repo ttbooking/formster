@@ -6,22 +6,21 @@ namespace TTBooking\Formster\Handlers;
 
 use Illuminate\Http\Request;
 use TTBooking\Formster\Concerns\AssertsPropertyTypes;
-use TTBooking\Formster\Concerns\MergesValidationRules;
 use TTBooking\Formster\Contracts\PropertyHandler;
 use TTBooking\Formster\Entities\AuraNamedType;
-use TTBooking\Formster\Entities\AuraProperty;
+use TTBooking\Formster\Entities\FinalAuraProperty;
 use TTBooking\Formster\Types\File;
 
 class FileHandler implements PropertyHandler
 {
-    use AssertsPropertyTypes, MergesValidationRules;
+    use AssertsPropertyTypes;
 
     /** @var class-string<File> */
     protected const TYPE = File::class;
 
-    public function __construct(public AuraProperty $property) {}
+    public function __construct(public FinalAuraProperty $property) {}
 
-    public static function satisfies(AuraProperty $property): bool
+    public static function satisfies(FinalAuraProperty $property): bool
     {
         return $property->type instanceof AuraNamedType && (
             is_a($property->type->name, static::TYPE, true) ||
@@ -37,7 +36,7 @@ class FileHandler implements PropertyHandler
 
     public function validationRules(): string|array
     {
-        return $this->mergeValidationRules('required|file');
+        return $this->property->mergeValidationRules('required|file');
     }
 
     public function handle(object $object, Request $request): void

@@ -7,7 +7,7 @@ namespace TTBooking\Formster\View\Components\Form;
 use Closure;
 use Illuminate\Contracts\View\View;
 use Illuminate\View\Component;
-use TTBooking\Formster\Entities\Aura;
+use TTBooking\Formster\Entities\FinalAura;
 use TTBooking\Formster\Facades\PropertyParser;
 use TTBooking\Formster\Support\AliasResolver;
 
@@ -15,7 +15,7 @@ use function TTBooking\Formster\Support\prop_desc;
 
 class Table extends Component
 {
-    public Aura $aura;
+    public FinalAura $aura;
 
     public string $alias;
 
@@ -33,7 +33,7 @@ class Table extends Component
         public bool $editable = false,
     ) {
         $this->aura = $this->factory()->getConsumableComponentData('aura') // @phpstan-ignore assign.propertyType
-            ?? PropertyParser::parse($object);
+            ?? PropertyParser::parse($object)->finalize();
         $this->alias = AliasResolver::resolveAlias($object);
 
         $this->summary = prop_desc($object, '_summary', $this->aura->summary);

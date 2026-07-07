@@ -9,7 +9,7 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use TTBooking\Formster\Contracts\PropertyHandler;
-use TTBooking\Formster\Entities\AuraProperty;
+use TTBooking\Formster\Entities\FinalAuraProperty;
 use TTBooking\Formster\Handlers\FallbackHandler;
 
 class HandlerFactory implements Contracts\HandlerFactory
@@ -30,7 +30,7 @@ class HandlerFactory implements Contracts\HandlerFactory
         );
     }
 
-    public function for(AuraProperty $property): PropertyHandler
+    public function for(FinalAuraProperty $property): PropertyHandler
     {
         /** @var class-string<PropertyHandler> $handlerClass */
         $handlerClass = $this->handlers->keys()->first->satisfies($property) ?? FallbackHandler::class; // @phpstan-ignore-line

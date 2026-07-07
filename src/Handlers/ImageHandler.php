@@ -17,6 +17,6 @@ class ImageHandler extends FileHandler
 
     public function validationRules(): string|array
     {
-        return $this->mergeValidationRules('required|image:allow_svg');
+        return $this->property->mergeValidationRules('required|image:allow_svg');
     }
 }

@@ -9,24 +9,63 @@ use Illuminate\Contracts\Validation\InvokableRule;
 use Illuminate\Contracts\Validation\Rule;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Stringable;
+use TTBooking\Formster\Concerns\MergesValidationRules;
+use TypeError;
 use UnexpectedValueException;
 
 #[Attribute(Attribute::TARGET_PROPERTY)]
-readonly class AuraProperty implements Stringable
+class AuraProperty implements Stringable
 {
-    public function __construct(
-        public bool $readable,
-        public bool $writable,
-        public AuraType $type,
-        public string $variableName,
-        public string $description,
-        public bool $hasDefaultValue = false,
-        public mixed $defaultValue = null,
+    use MergesValidationRules;
+
+    final public function __construct(
+        public readonly ?bool $readable = true,
+        public readonly ?bool $writable = true,
+        public readonly ?AuraType $type = null,
+        public ?string $variableName = null,
+        public readonly ?string $description = null,
+        public readonly ?bool $hasDefaultValue = false,
+        public readonly mixed $defaultValue = null,
         /** @var string|list<string|Stringable|Rule|InvokableRule|ValidationRule> */
-        public string|array $validationRules = [],
-        public string $viewPolicy = 'view',
-        public string $updatePolicy = 'update',
+        public readonly string|array $validationRules = [],
+        public readonly ?string $viewPolicy = 'view',
+        public readonly ?string $updatePolicy = 'update',
     ) {}
+
+    /**
+     * @throws TypeError
+     */
+    public function finalize(): FinalAuraProperty
+    {
+        return new FinalAuraProperty(
+            readable: $this->readable,
+            writable: $this->writable,
+            type: $this->type,
+            variableName: $this->variableName,
+            description: $this->description,
+            hasDefaultValue: $this->hasDefaultValue,
+            defaultValue: $this->defaultValue,
+            validationRules: $this->validationRules,
+            viewPolicy: $this->viewPolicy,
+            updatePolicy: $this->updatePolicy,
+        );
+    }
+
+    public function merge(self $property): static
+    {
+        return new static(
+            readable: $property->readable ?? $this->readable,
+            writable: $property->writable ?? $this->writable,
+            type: $property->type ?? $this->type,
+            variableName: $property->variableName ?? $this->variableName,
+            description: $property->description ?? $this->description,
+            hasDefaultValue: $property->hasDefaultValue ?? $this->hasDefaultValue,
+            defaultValue: $property->defaultValue ?? $this->defaultValue,
+            validationRules: $property->mergeValidationRules($this->validationRules),
+            viewPolicy: $property->viewPolicy ?? $this->viewPolicy,
+            updatePolicy: $property->updatePolicy ?? $this->updatePolicy,
+        );
+    }
 
     public function __toString(): string
     {

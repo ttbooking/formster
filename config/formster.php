@@ -8,7 +8,7 @@ return [
     |--------------------------------------------------------------------------
     */
 
-    'property_parser' => env('FORMSTER_PROPERTY_PARSER', 'phpstan,reflection'),
+    'property_parser' => env('FORMSTER_PROPERTY_PARSER', 'aura,phpstan,reflection'),
 
     /*
     |--------------------------------------------------------------------------

@@ -6,13 +6,13 @@ namespace TTBooking\Formster\Handlers;
 
 use Illuminate\Http\Request;
 use TTBooking\Formster\Contracts\PropertyHandler;
-use TTBooking\Formster\Entities\AuraProperty;
+use TTBooking\Formster\Entities\FinalAuraProperty;
 
 class FallbackHandler implements PropertyHandler
 {
-    public function __construct(public AuraProperty $property) {}
+    public function __construct(public FinalAuraProperty $property) {}
 
-    public static function satisfies(AuraProperty $property): bool
+    public static function satisfies(FinalAuraProperty $property): bool
     {
         return true;
     }

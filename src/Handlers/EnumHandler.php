@@ -9,18 +9,17 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use ReflectionEnum;
 use TTBooking\Formster\Concerns\AssertsPropertyTypes;
-use TTBooking\Formster\Concerns\MergesValidationRules;
 use TTBooking\Formster\Contracts\PropertyHandler;
 use TTBooking\Formster\Entities\AuraNamedType;
-use TTBooking\Formster\Entities\AuraProperty;
+use TTBooking\Formster\Entities\FinalAuraProperty;
 
 class EnumHandler implements PropertyHandler
 {
-    use AssertsPropertyTypes, MergesValidationRules;
+    use AssertsPropertyTypes;
 
-    public function __construct(public AuraProperty $property, protected int $buttonLimit = 2) {}
+    public function __construct(public FinalAuraProperty $property, protected int $buttonLimit = 2) {}
 
-    public static function satisfies(AuraProperty $property): bool
+    public static function satisfies(FinalAuraProperty $property): bool
     {
         return $property->type instanceof AuraNamedType
             && is_subclass_of($property->type->name, BackedEnum::class);
@@ -41,7 +40,7 @@ class EnumHandler implements PropertyHandler
         /** @var class-string<BackedEnum> $enumClass */
         $enumClass = $this->namedType()->name;
 
-        return $this->mergeValidationRules(['required', Rule::enum($enumClass)]);
+        return $this->property->mergeValidationRules(['required', Rule::enum($enumClass)]);
     }
 
     public function handle(object $object, Request $request): void

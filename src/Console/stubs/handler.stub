@@ -6,14 +6,11 @@ namespace {{ namespace }};
 
 use {{ namespacedType }};
 use Illuminate\Http\Request;
-use TTBooking\Formster\Concerns\MergesValidationRules;
 use TTBooking\Formster\Contracts\PropertyHandler;
 use TTBooking\Formster\Entities\AuraProperty;
 
 class {{ class }} implements PropertyHandler
 {
-    use MergesValidationRules;
-
     public function __construct(public AuraProperty $property) {}
 
     public static function satisfies(AuraProperty $property): bool
@@ -28,7 +25,7 @@ class {{ class }} implements PropertyHandler
 
     public function validationRules(): string|array
     {
-        return $this->mergeValidationRules();
+        return $this->property->mergeValidationRules();
     }
 
     public function handle(object $object, Request $request): void
