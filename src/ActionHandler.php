@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Gate;
 use TTBooking\Formster\Contracts\HandlerFactory;
 use TTBooking\Formster\Contracts\PropertyParser;
 
+use function TTBooking\Formster\Support\prop_desc;
+
 class ActionHandler implements Contracts\ActionHandler
 {
     public function __construct(protected PropertyParser $parser, protected HandlerFactory $handler) {}
@@ -17,14 +19,13 @@ class ActionHandler implements Contracts\ActionHandler
     {
         $aura = $this->parser->parse($object)->finalize();
 
-        $rules = [];
+        $rules = $attributes = [];
         foreach ($aura->properties as $property) {
             $rules[$property->variableName] = $this->handler->for($property)->validationRules();
+            $attributes[$property->variableName] = prop_desc($object, $property->variableName, $property->description);
         }
 
-        // $rules = $aura->properties->pluck('validationRules', 'variableName')->all();
-
-        $request->validate($rules);
+        $request->validate($rules, [], $attributes);
 
         foreach ($aura->properties as $property) {
             if ($property->writable && Gate::check(

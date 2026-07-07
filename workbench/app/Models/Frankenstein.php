@@ -14,9 +14,7 @@ use Workbench\Database\Factories\FrankensteinFactory;
  * @property bool $flag Some flag
  */
 #[Aura(properties: [
-    'text' => new AuraProperty(validationRules: ['...', 'required|string|min:3']),
-    'number' => new AuraProperty(validationRules: ['...', 'required|integer']),
-    'flag' => new AuraProperty(validationRules: ['...', 'sometimes|in:on']),
+    'text' => new AuraProperty(validationRules: ['...', 'min:3']),
 ])]
 class Frankenstein extends Model
 {

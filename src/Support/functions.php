@@ -23,7 +23,7 @@ function prop_desc(object|string $objectOrClass, string $property, null|string|C
     $alias = AliasResolver::resolveAlias($objectOrClass);
     $appKey = sprintf('formster.%s.%s.%s', $type, $alias, Str::snake($property));
     $pkgKey = sprintf('formster::%s.%s.%s', $type, $alias, Str::snake($property));
-    $fallback ??= static fn () => Str::headline($property);
+    $fallback = $fallback ?: static fn () => Str::headline($property);
 
     /** @var string */
     return $translator->has($appKey) ? $translator->get($appKey) : (

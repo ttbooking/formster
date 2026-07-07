@@ -9,7 +9,7 @@
 @elseif ($object && $editable)
     <x-dynamic-component {{ $attributes }} :$component :$property />
     @error ($property->variableName)
-        <div>{{ $message }}</div>
+        <div @class('formster-validation-failed')>{{ $message }}</div>
     @enderror
 @else
     <x-dynamic-component {{ $attributes->except('id') }} :$component :$property />
