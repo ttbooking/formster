@@ -7,13 +7,13 @@ namespace {{ namespace }};
 use {{ namespacedType }};
 use Illuminate\Http\Request;
 use TTBooking\Formster\Contracts\PropertyHandler;
-use TTBooking\Formster\Entities\AuraProperty;
+use TTBooking\Formster\Entities\FinalAuraProperty;
 
 class {{ class }} implements PropertyHandler
 {
-    public function __construct(public AuraProperty $property) {}
+    public function __construct(public FinalAuraProperty $property) {}
 
-    public static function satisfies(AuraProperty $property): bool
+    public static function satisfies(FinalAuraProperty $property): bool
     {
         return $property->type->contains({{ type }}::class);
     }

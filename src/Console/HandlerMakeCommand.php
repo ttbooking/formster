@@ -91,7 +91,7 @@ class HandlerMakeCommand extends GeneratorCommand
      */
     protected function getStub(): string
     {
-        return $this->resolveStubPath('/stubs/handler.stub');
+        return $this->resolveStubPath('/stubs/formster-handler.stub');
     }
 
     /**

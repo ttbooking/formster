@@ -16,9 +16,10 @@
             ],
             "files": [
                 {
-                    "directory": "src/Handlers",
+                    "directory": "app/Formster/Handlers",
                     "template": {
-                        "path": "/src/Console/stubs/handler.stub",
+                        "path": "/stubs/formster-handler.stub",
+                        "fallbackPath": "src/Console/stubs/formster-handler.stub",
                         "parameters": {
                             "{{ namespace }}": "${INPUT_FQN|namespace}",
                             "{{ class }}": "${INPUT_FQN|className}",

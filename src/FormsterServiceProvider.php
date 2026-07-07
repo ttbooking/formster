@@ -84,6 +84,10 @@ class FormsterServiceProvider extends ServiceProvider // implements DeferrablePr
         $this->publishes([
             __DIR__.'/../resources/views' => $this->app->resourcePath('views/vendor/formster'),
         ], ['formster-views', 'formster', 'views']);
+
+        $this->publishes([
+            __DIR__.'/Console/stubs/formster-handler.stub' => $this->app->basePath('stubs/formster-handler.stub'),
+        ], ['formster-stub', 'formster', 'stub']);
     }
 
     /**
