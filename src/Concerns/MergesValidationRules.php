@@ -4,24 +4,28 @@ declare(strict_types=1);
 
 namespace TTBooking\Formster\Concerns;
 
+use Closure;
 use Illuminate\Contracts\Validation\InvokableRule;
 use Illuminate\Contracts\Validation\Rule;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Stringable;
 
+/**
+ * @phpstan-type RuleList list<void|string|Stringable|Rule|InvokableRule|ValidationRule>
+ */
 trait MergesValidationRules
 {
     /**
      * Merge property validation rules using ellipsis (...) notation.
      *
-     * @param  string|list<string|Stringable|Rule|InvokableRule|ValidationRule>  $rules
-     * @return string|list<string|Stringable|Rule|InvokableRule|ValidationRule>
+     * @param  string|RuleList|Closure(): (string|RuleList)  $rules
+     * @return string|RuleList
      */
-    public function mergeValidationRules(string|array $rules = []): string|array
+    public function mergeValidationRules(string|array|Closure $rules = []): string|array
     {
         // Return passed rules if there are no property rules defined
-        if (! $propertyRules = (array) ($this->validationRules ?: [])) {
-            return $rules;
+        if (! $propertyRules = (array) (value($this->validationRules) ?: [])) {
+            return value($rules);
         }
 
         // Return property rules intact unless insertion directive found
@@ -30,9 +34,9 @@ trait MergesValidationRules
         }
 
         // Substitute insertion directive with passed rules
-        $propertyRules[$key] = $rules;
+        $propertyRules[$key] = value($rules);
 
-        /** @var list<string|Stringable|Rule|InvokableRule|ValidationRule> */
+        /** @var RuleList */
         return collect($propertyRules)
             ->flatten()
             ->map(static fn (mixed $rule) => is_string($rule) ? explode('|', $rule) : $rule)

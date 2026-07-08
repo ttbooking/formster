@@ -5,14 +5,15 @@ declare(strict_types=1);
 namespace TTBooking\Formster\Entities;
 
 use Attribute;
-use Illuminate\Contracts\Validation\InvokableRule;
-use Illuminate\Contracts\Validation\Rule;
-use Illuminate\Contracts\Validation\ValidationRule;
+use Closure;
 use Stringable;
 use TTBooking\Formster\Concerns\MergesValidationRules;
 use TypeError;
 use UnexpectedValueException;
 
+/**
+ * @phpstan-import-type RuleList from MergesValidationRules
+ */
 #[Attribute(Attribute::TARGET_PROPERTY)]
 class AuraProperty implements Stringable
 {
@@ -26,8 +27,8 @@ class AuraProperty implements Stringable
         public readonly ?string $description = null,
         public readonly ?bool $hasDefaultValue = false,
         public readonly mixed $defaultValue = null,
-        /** @var string|list<string|Stringable|Rule|InvokableRule|ValidationRule> */
-        public readonly string|array $validationRules = [],
+        /** @var string|RuleList|Closure(): (string|RuleList) */
+        public string|array|Closure $validationRules = [],
         public readonly ?string $viewPolicy = 'view',
         public readonly ?string $updatePolicy = 'update',
     ) {}

@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace TTBooking\Formster\Entities;
 
-use Illuminate\Contracts\Validation\InvokableRule;
-use Illuminate\Contracts\Validation\Rule;
-use Illuminate\Contracts\Validation\ValidationRule;
-use Stringable;
+use Closure;
 use TTBooking\Formster\Concerns\MergesValidationRules;
 
+/**
+ * @phpstan-import-type RuleList from MergesValidationRules
+ */
 readonly class FinalAuraProperty
 {
     use MergesValidationRules;
@@ -22,8 +22,8 @@ readonly class FinalAuraProperty
         public string $description,
         public bool $hasDefaultValue = false,
         public mixed $defaultValue = null,
-        /** @var string|list<string|Stringable|Rule|InvokableRule|ValidationRule> */
-        public string|array $validationRules = [],
+        /** @var string|RuleList|Closure(): (string|RuleList) */
+        public string|array|Closure $validationRules = [],
         public string $viewPolicy = 'view',
         public string $updatePolicy = 'update',
     ) {}

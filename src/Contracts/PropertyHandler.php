@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace TTBooking\Formster\Contracts;
 
-use Illuminate\Contracts\Validation\InvokableRule;
-use Illuminate\Contracts\Validation\Rule;
-use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Http\Request;
-use Stringable;
+use TTBooking\Formster\Concerns\MergesValidationRules;
 use TTBooking\Formster\Entities\FinalAuraProperty;
 
+/**
+ * @phpstan-import-type RuleList from MergesValidationRules
+ */
 interface PropertyHandler
 {
     public static function satisfies(FinalAuraProperty $property): bool;
@@ -18,7 +18,7 @@ interface PropertyHandler
     public function component(): string;
 
     /**
-     * @return string|list<string|Stringable|Rule|InvokableRule|ValidationRule>
+     * @return string|RuleList
      */
     public function validationRules(): string|array;
 
