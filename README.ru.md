@@ -37,6 +37,7 @@ Route::put('/users/{user}', function (Request $request, User $user) {
 - [Парсеры свойств](#парсеры-свойств)
 - [Обработчики свойств (Handlers)](#обработчики-свойств-handlers)
 - [Поддерживаемые типы и виджеты](#поддерживаемые-типы-и-виджеты)
+- [Валидация](#валидация)
 - [Псевдотипы и касты](#псевдотипы-и-касты)
   - [Color — цвет](#color--цвет)
   - [DateTimeZone — часовой пояс](#datetimezone--часовой-пояс)
@@ -61,6 +62,7 @@ Route::put('/users/{user}', function (Request $request, User $user) {
 - 🧠 **Несколько источников метаданных.** Свойства извлекаются из PHPDoc (`@property`), нативных типов PHP (рефлексия) и PHP-атрибутов `#[Aura]` / `#[AuraProperty]`. Источники можно комбинировать.
 - 🧩 **Богатая система типов.** Поддержка union (`A|B`), intersection (`A&B`), nullable, дженериков (`Collection<int, User>`, `list<File>`, `class-string<User>`) и рекурсивного разбора вложенных классов.
 - 🎛️ **Готовые виджеты** для строк, чисел, дробных, булевых, enum, дат, часовых поясов, цветов, файлов и изображений.
+- ✅ **Автоматическая валидация.** Каждый обработчик добавляет своему полю правила по умолчанию; собственные правила задаются в метаданных свойства и сливаются с дефолтными через нотацию `'...'`, а сообщения об ошибках выводятся рядом с полями.
 - 🖼️ **Псевдотипы файлов и изображений** с загрузкой через `Storage`, автоматическими превью (Intervention Image) и очисткой старых файлов.
 - 🔒 **Интеграция с Laravel Gate.** Просмотр и редактирование каждого свойства управляются политиками (`viewPolicy` / `updatePolicy`), с мягким режимом по умолчанию и переключаемым строгим режимом.
 - 🌍 **Локализация** подписей полей, описаний и enum-значений (из коробки английский и русский).
@@ -93,6 +95,9 @@ php artisan vendor:publish --tag=formster-config
 
 # Blade-шаблоны виджетов (для кастомизации вёрстки)
 php artisan vendor:publish --tag=formster-views
+
+# стаб генератора обработчиков (для кастомизации make:formster-handler)
+php artisan vendor:publish --tag=formster-stub
 ```
 
 ---
@@ -150,7 +155,7 @@ Route::put('/formster/{model}', function (Request $request, Frankenstein $model)
 })->name('update');
 ```
 
-`ActionHandler::update()` сам обходит доступные для записи свойства модели (read-only свойства пропускаются), применяет нужный обработчик к каждому полю из запроса, учитывает политики доступа и возвращает изменённый объект — остаётся лишь вызвать `->save()`.
+`ActionHandler::update()` сначала валидирует запрос (правила собираются с обработчика и метаданных каждого свойства, а в сообщениях об ошибках поля называются своими локализованными описаниями), затем обходит доступные для записи свойства модели (read-only свойства пропускаются), применяет нужный обработчик к каждому полю, учитывает политики доступа и возвращает изменённый объект — остаётся лишь вызвать `->save()`.
 
 ---
 
@@ -161,7 +166,7 @@ Route::put('/formster/{model}', function (Request $request, Frankenstein $model)
 ```
                 ┌─────────────────────┐
    объект  ───► │   PropertyParser    │ ──► Aura { properties: AuraProperty[] }
-                │  (phpstan,reflection)│
+                │ (aura,phpstan,refl.)│
                 └─────────────────────┘
                            │
                            ▼  для каждого свойства
@@ -175,16 +180,17 @@ Route::put('/formster/{model}', function (Request $request, Frankenstein $model)
    (рендеринг формы)              (обработка отправки)
 ```
 
-1. **Парсинг.** `PropertyParser::parse($object)` разбирает объект и возвращает агрегат **`Aura`** — описание класса со списком свойств **`AuraProperty`** (имя, тип, читаемость/записываемость, значение по умолчанию, политики доступа).
+1. **Парсинг.** `PropertyParser::parse($object)` разбирает объект и возвращает агрегат **`Aura`** — описание класса со списком свойств **`AuraProperty`** (имя, тип, читаемость/записываемость, значение по умолчанию, правила валидации, политики доступа). Перед использованием агрегат финализируется: `finalize()` превращает его в неизменяемые **`FinalAura`** / **`FinalAuraProperty`** — именно их получают обработчики и виджеты.
 2. **Подбор обработчика.** Для каждого свойства `HandlerFactory::for($property)` подбирает первый `PropertyHandler`, чей статический метод `satisfies()` соответствует типу свойства.
-3. **Рендеринг и обработка.** При выводе формы обработчик через `component()` указывает Blade-виджет. При отправке `handle()` приводит значение из `Request` и записывает в объект.
+3. **Рендеринг и обработка.** При выводе формы обработчик через `component()` указывает Blade-виджет. При отправке запрос сначала валидируется по правилам из `validationRules()`, затем `handle()` приводит значение из `Request` и записывает в объект.
 
 ### Ключевые сущности
 
 | Сущность           | Назначение                                                                                                                                                                                                                               |
 | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **`Aura`**         | «Аура» класса: краткое (`summary`) и полное (`description`) описание, коллекция свойств (проиндексирована по имени) и политики по умолчанию (`viewPolicy`, `updatePolicy`). Одновременно является PHP-атрибутом уровня класса `#[Aura]`. |
-| **`AuraProperty`** | Описание одного свойства: `readable`, `writable`, `type`, `variableName`, `description`, `hasDefaultValue`/`defaultValue`, `viewPolicy`, `updatePolicy`. Одновременно является атрибутом свойства `#[AuraProperty]`.                     |
+| **`AuraProperty`** | Описание одного свойства: `readable`, `writable`, `type`, `variableName`, `description`, `hasDefaultValue`/`defaultValue`, `validationRules`, `viewPolicy`, `updatePolicy`. Одновременно является атрибутом свойства `#[AuraProperty]`. |
+| **`FinalAura`** / **`FinalAuraProperty`** | Финализированные (неизменяемые, полностью заполненные) версии `Aura`/`AuraProperty`, которые создаёт `Aura::finalize()` после слияния всех парсеров. Именно с ними работают обработчики и Blade-компоненты. |
 | **`AuraType`**     | Система типов: `AuraNamedType` (именованный/дженерик-тип), `AuraUnionType` (`A\|B`), `AuraIntersectionType` (`A&B`). Предоставляет метод `contains()` и флаг `nullable`.                                                                 |
 
 ---
@@ -238,21 +244,28 @@ use TTBooking\Formster\Entities\AuraNamedType;
 class Profile
 {
     #[AuraProperty(
-        readable: true,
-        writable: true,
         type: new AuraNamedType('string'),
-        variableName: 'nickname',
         description: 'Псевдоним',
+        validationRules: ['...', 'min:3'],
     )]
     public string $nickname;
 }
+```
+
+Все параметры `#[AuraProperty]` необязательны — атрибут лишь дополняет или уточняет то, что нашли другие парсеры. Свойства можно описать и на уровне класса — через параметр `properties` атрибута `#[Aura]` (ключ массива — имя свойства):
+
+```php
+#[Aura(properties: [
+    'text' => new AuraProperty(validationRules: ['...', 'min:3']),
+])]
+class Frankenstein extends Model {}
 ```
 
 ---
 
 ## Парсеры свойств
 
-За извлечение метаданных отвечают парсеры. Активные парсеры и их порядок задаются опцией `formster.property_parser` (по умолчанию `phpstan,reflection`).
+За извлечение метаданных отвечают парсеры. Активные парсеры и их порядок задаются опцией `formster.property_parser` (по умолчанию `aura,phpstan,reflection`).
 
 | Драйвер                | Источник данных                                                                                                           |
 | ---------------------- | ------------------------------------------------------------------------------------------------------------------------- |
@@ -267,7 +280,7 @@ class Profile
 
 Если в `property_parser` указано несколько драйверов через запятую, автоматически используется драйвер `aggregate`. Он последовательно прогоняет объект через каждый парсер и **сливает** результаты через `Aura::merge()`.
 
-> **Порядок важен:** парсеры, идущие позже в списке, имеют приоритет — их непустые значения перекрывают данные предыдущих. Например, при `phpstan,reflection` данные из PHPDoc дополняются и при совпадении перекрываются информацией из нативных типов.
+> **Порядок важен:** парсеры, идущие позже в списке, имеют приоритет. Одноимённые свойства сливаются пополе́вно (`AuraProperty::merge()`): каждый элемент метаданных (тип, описание, политика и т.д.) берётся из более позднего парсера, если он там задан, иначе сохраняется значение более раннего. Правила валидации сливаются по нотации `'...'` (см. [Валидация](#валидация)).
 
 ### Кэширование
 
@@ -282,38 +295,61 @@ class Profile
 ```php
 interface PropertyHandler
 {
-    public static function satisfies(AuraProperty $property): bool; // подходит ли тип
-    public function component(): string;                            // Blade-виджет
-    public function handle(object $object, Request $request): void; // запись значения
-    public function validate(Request $request): bool;               // валидация
+    public static function satisfies(FinalAuraProperty $property): bool; // подходит ли тип
+    public function component(): string;                                 // Blade-виджет
+    public function validationRules(): string|array;                     // правила валидации поля
+    public function handle(object $object, Request $request): void;      // запись значения
 }
 ```
 
 `HandlerFactory::for($property)` перебирает обработчики из конфига `formster.property_handlers` и возвращает первый, для которого `satisfies()` вернул `true`. Если ни один не подошёл, используется `FallbackHandler`.
 
-> `validate()` зарезервирован под будущую подсистему валидации — пакет пока его не вызывает.
+> Обработчики получают финализированное свойство `FinalAuraProperty`. Правила из `validationRules()` применяются автоматически при обработке отправки — см. [Валидация](#валидация).
 
 ---
 
 ## Поддерживаемые типы и виджеты
 
-| Тип свойства          | Обработчик            | Виджет (Blade)               | HTML-поле                           |
-| --------------------- | --------------------- | ---------------------------- | ----------------------------------- |
-| `bool`                | `BooleanHandler`      | `form.checkbox`              | `<input type="checkbox">`           |
-| `int`                 | `IntegerHandler`      | `form.number`                | `<input type="number">`             |
-| `float`               | `FloatHandler`        | `form.decimal`               | `<input type="number" step="0.01">` |
-| `string`              | `StringHandler`       | `form.text`                  | `<input type="text">`               |
-| `BackedEnum`          | `EnumHandler`         | `form.radio` / `form.select` | переключатели или выпадающий список |
-| `DateTimeInterface`   | `DateTimeHandler`     | `form.datetime`              | `<input type="datetime-local">`     |
-| `DateTimeZone`        | `DateTimeZoneHandler` | `form.timezone`              | `<select>` с часовыми поясами       |
-| `Color`               | `ColorHandler`        | `form.color`                 | `<input type="color">`              |
-| `File` / `list<File>` | `FileHandler`         | `form.file`                  | `<input type="file">`               |
-| `Image`               | `ImageHandler`        | `form.image`                 | `<input type="file">` + превью      |
-| *прочее*              | `FallbackHandler`     | `form.disclaimer`            | сообщение «тип не поддерживается»   |
+| Тип свойства          | Обработчик            | Виджет (Blade)               | HTML-поле                           | Правила валидации (по умолчанию) |
+| --------------------- | --------------------- | ---------------------------- | ----------------------------------- | -------------------------------- |
+| `bool`                | `BooleanHandler`      | `form.checkbox`              | `<input type="checkbox">`           | `sometimes\|in:on`               |
+| `int`                 | `IntegerHandler`      | `form.number`                | `<input type="number">`             | `required\|integer`              |
+| `float`               | `FloatHandler`        | `form.decimal`               | `<input type="number" step="0.01">` | `required\|numeric`              |
+| `string`              | `StringHandler`       | `form.text`                  | `<input type="text">`               | `required\|string`               |
+| `BackedEnum`          | `EnumHandler`         | `form.radio` / `form.select` | переключатели или выпадающий список | `required` + `Rule::enum(...)`   |
+| `DateTimeInterface`   | `DateTimeHandler`     | `form.datetime`              | `<input type="datetime-local">`     | `required\|date`                 |
+| `DateTimeZone`        | `DateTimeZoneHandler` | `form.timezone`              | `<select>` с часовыми поясами       | `required\|timezone`             |
+| `Color`               | `ColorHandler`        | `form.color`                 | `<input type="color">`              | `required\|hex_color`            |
+| `File` / `list<File>` | `FileHandler`         | `form.file`                  | `<input type="file">`               | `required\|file`                 |
+| `Image`               | `ImageHandler`        | `form.image`                 | `<input type="file">` + превью      | `required\|image:allow_svg`      |
+| *прочее*              | `FallbackHandler`     | `form.disclaimer`            | сообщение «тип не поддерживается»   | —                                |
 
 **Enum.** `EnumHandler` рендерит переключатели (`radio`), если число вариантов не превышает порог `buttonLimit` (по умолчанию **2**), и выпадающий список (`select`) в противном случае.
 
 Описания вариантов enum локализуются (см. [Локализация](#локализация)); при отсутствии перевода берётся PHPDoc-комментарий кейса или его «человекочитаемое» имя.
+
+---
+
+## Валидация
+
+Прежде чем что-либо записывать, `ActionHandler::update()` валидирует запрос штатным `$request->validate()`. Правила собираются автоматически:
+
+1. Каждый обработчик отдаёт правила по умолчанию для своего типа через `validationRules()` (см. таблицу выше).
+2. Правила уровня свойства задаются параметром `validationRules` атрибута `#[AuraProperty]` — строкой (`'required|min:3'`), массивом или замыканием, возвращающим список правил (замыкания в атрибутах требуют PHP ≥ 8.5).
+3. Правила, объявленные у свойства, **заменяют** дефолтные правила обработчика. Чтобы **дополнить** дефолтные, включите в список элемент `'...'` — на его место подставятся правила обработчика (списки разворачиваются и дедуплицируются):
+
+```php
+use TTBooking\Formster\Entities\Aura;
+use TTBooking\Formster\Entities\AuraProperty;
+
+#[Aura(properties: [
+    // итоговые правила: required|string|min:3
+    'text' => new AuraProperty(validationRules: ['...', 'min:3']),
+])]
+class Frankenstein extends Model {}
+```
+
+При провале валидации срабатывает обычная механика Laravel (редирект назад с `$errors`). Виджеты выводят сообщение под полем в блоке с классом `formster-validation-failed`, а в текстах ошибок поле называется своим локализованным описанием (см. [Локализация](#локализация)).
 
 ---
 
@@ -453,7 +489,7 @@ File::generateStorableNamesNormally();
 <x-formster::form.text :property="$property" />
 ```
 
-Виджеты используют `@aware` для наследования контекста от родительской таблицы (`object`, `editable`; файловые виджеты — ещё и `action`) и показывают либо редактируемое поле, либо представление «только для чтения».
+Виджеты используют `@aware` для наследования контекста от родительской таблицы (`object`, `editable`; файловые виджеты — ещё и `action`) и показывают либо редактируемое поле, либо представление «только для чтения». При провале валидации сообщение об ошибке выводится под полем в блоке `<div class="formster-validation-failed">`.
 
 Чтобы изменить вёрстку, опубликуйте шаблоны (`vendor:publish --tag=formster-views`) и отредактируйте файлы в `resources/views/vendor/formster`.
 
@@ -594,7 +630,7 @@ class Customer extends Model {}
 return [
 
     // Парсер(ы) свойств. Несколько — через запятую (включает агрегацию).
-    'property_parser' => env('FORMSTER_PROPERTY_PARSER', 'phpstan,reflection'),
+    'property_parser' => env('FORMSTER_PROPERTY_PARSER', 'aura,phpstan,reflection'),
 
     // Кэш результатов парсинга.
     'property_cache' => [
@@ -642,7 +678,7 @@ return [
 
 | Переменная                              | Назначение                  | По умолчанию         |
 | --------------------------------------- | --------------------------- | -------------------- |
-| `FORMSTER_PROPERTY_PARSER`              | Парсер(ы) свойств           | `phpstan,reflection` |
+| `FORMSTER_PROPERTY_PARSER`              | Парсер(ы) свойств           | `aura,phpstan,reflection` |
 | `FORMSTER_ENFORCE_POLICIES`             | Строгий режим политик       | `false`              |
 | `FORMSTER_PROPERTY_CACHE_STORE`         | Хранилище кэша              | стандартное          |
 | `FORMSTER_PROPERTY_CACHE_TTL`           | TTL кэша (сек)              | бессрочно            |
@@ -676,13 +712,13 @@ namespace App\Formster\Handlers;
 use App\Formster\Types\Money;
 use Illuminate\Http\Request;
 use TTBooking\Formster\Contracts\PropertyHandler;
-use TTBooking\Formster\Entities\AuraProperty;
+use TTBooking\Formster\Entities\FinalAuraProperty;
 
 class MoneyHandler implements PropertyHandler
 {
-    public function __construct(public AuraProperty $property) {}
+    public function __construct(public FinalAuraProperty $property) {}
 
-    public static function satisfies(AuraProperty $property): bool
+    public static function satisfies(FinalAuraProperty $property): bool
     {
         return $property->type->contains(Money::class);
     }
@@ -692,21 +728,23 @@ class MoneyHandler implements PropertyHandler
         return 'formster::form.money';
     }
 
+    public function validationRules(): string|array
+    {
+        return $this->property->mergeValidationRules();
+    }
+
     public function handle(object $object, Request $request): void
     {
         $object->{$this->property->variableName} = new Money($request->{$this->property->variableName});
     }
-
-    public function validate(Request $request): bool
-    {
-        return true;
-    }
 }
 ```
 
+`mergeValidationRules($defaults)` сливает правила, объявленные у свойства, с дефолтными правилами обработчика по нотации `'...'` (см. [Валидация](#валидация)).
+
 Зарегистрируйте обработчик в `config/formster.php` (в массиве `property_handlers`, до `FileHandler`/`FallbackHandler`) и создайте Blade-виджет `form.money`.
 
-Стаб генератора можно опубликовать и кастомизировать, поместив `stubs/handler.stub` в корень приложения.
+Стаб генератора публикуется командой `vendor:publish --tag=formster-stub` и кастомизируется — команда подхватывает `stubs/formster-handler.stub` из корня приложения.
 
 ---
 
@@ -731,7 +769,7 @@ class Product extends Model {}
 | Фасад             | Класс                   | Назначение                                                                               |
 | ----------------- | ----------------------- | ---------------------------------------------------------------------------------------- |
 | `PropertyParser`  | `PropertyParserManager` | `parse($objectOrClass): Aura` — разбор объекта/класса в метаданные                       |
-| `PropertyHandler` | `HandlerFactory`        | `for(AuraProperty $property): PropertyHandler` — подбор обработчика                      |
+| `PropertyHandler` | `HandlerFactory`        | `for(FinalAuraProperty $property): PropertyHandler` — подбор обработчика                 |
 | `ActionHandler`   | `ActionHandler`         | `update(Request $request, object $object): object` — применение данных запроса к объекту |
 
 ```php

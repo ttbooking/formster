@@ -37,6 +37,7 @@ Route::put('/users/{user}', function (Request $request, User $user) {
 - [Property parsers](#property-parsers)
 - [Property handlers](#property-handlers)
 - [Supported types and widgets](#supported-types-and-widgets)
+- [Validation](#validation)
 - [Pseudotypes and casts](#pseudotypes-and-casts)
   - [Color](#color)
   - [DateTimeZone](#datetimezone)
@@ -61,6 +62,7 @@ Route::put('/users/{user}', function (Request $request, User $user) {
 - 🧠 **Multiple metadata sources.** Properties are extracted from PHPDoc (`@property`), native PHP types (reflection), and the `#[Aura]` / `#[AuraProperty]` PHP attributes. Sources can be combined.
 - 🧩 **Rich type system.** Support for union (`A|B`), intersection (`A&B`), nullable, generics (`Collection<int, User>`, `list<File>`, `class-string<User>`), and recursive parsing of nested classes.
 - 🎛️ **Ready-made widgets** for strings, integers, floats, booleans, enums, dates, time zones, colors, files, and images.
+- ✅ **Automatic validation.** Every handler contributes default rules for its field; per-property rules are declared in the metadata and merged with the defaults via the `'...'` notation, and error messages are rendered next to the fields.
 - 🖼️ **File and image pseudotypes** with `Storage` uploads, automatic previews (Intervention Image), and old-file cleanup.
 - 🔒 **Laravel Gate integration.** Viewing and editing of every property is governed by policies (`viewPolicy` / `updatePolicy`), with a lenient mode by default and a switchable enforcing mode.
 - 🌍 **Localization** of field labels, descriptions, and enum values (English and Russian out of the box).
@@ -93,6 +95,9 @@ php artisan vendor:publish --tag=formster-config
 
 # Blade widget templates (to customize markup)
 php artisan vendor:publish --tag=formster-views
+
+# the handler generator stub (to customize make:formster-handler)
+php artisan vendor:publish --tag=formster-stub
 ```
 
 ---
@@ -150,7 +155,7 @@ Route::put('/formster/{model}', function (Request $request, Frankenstein $model)
 })->name('update');
 ```
 
-`ActionHandler::update()` walks over the model's writable properties (read-only ones are skipped), applies the appropriate handler to each field from the request, respects access policies, and returns the modified object — all that's left is to call `->save()`.
+`ActionHandler::update()` first validates the request (the rules are gathered from each property's handler and metadata, and error messages address fields by their localized descriptions), then walks over the model's writable properties (read-only ones are skipped), applies the appropriate handler to each field, respects access policies, and returns the modified object — all that's left is to call `->save()`.
 
 ---
 
@@ -161,7 +166,7 @@ The full "model → form → submission" cycle consists of three stages.
 ```
                 ┌─────────────────────┐
    object  ───► │   PropertyParser    │ ──► Aura { properties: AuraProperty[] }
-                │  (phpstan,reflection)│
+                │ (aura,phpstan,refl.)│
                 └─────────────────────┘
                            │
                            ▼  for each property
@@ -175,16 +180,17 @@ The full "model → form → submission" cycle consists of three stages.
    (rendering the form)            (processing the submission)
 ```
 
-1. **Parsing.** `PropertyParser::parse($object)` inspects the object and returns an aggregate **`Aura`** — a class description with a list of **`AuraProperty`** entries (name, type, readability/writability, default value, access policies).
+1. **Parsing.** `PropertyParser::parse($object)` inspects the object and returns an aggregate **`Aura`** — a class description with a list of **`AuraProperty`** entries (name, type, readability/writability, default value, validation rules, access policies). Before use, `finalize()` turns the aggregate into the immutable **`FinalAura`** / **`FinalAuraProperty`** counterparts — this is what handlers and widgets receive.
 2. **Handler selection.** For each property, `HandlerFactory::for($property)` picks the first `PropertyHandler` whose static `satisfies()` method matches the property type.
-3. **Rendering and processing.** When rendering the form the handler's `component()` names the Blade widget. On submission `handle()` casts the value from the `Request` and writes it into the object.
+3. **Rendering and processing.** When rendering the form the handler's `component()` names the Blade widget. On submission the request is first validated against the rules from `validationRules()`, then `handle()` casts the value from the `Request` and writes it into the object.
 
 ### Key entities
 
 | Entity             | Purpose                                                                                                                                                                                                                     |
 | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **`Aura`**         | The class "aura": short (`summary`) and full (`description`) descriptions, a collection of properties (indexed by name), and default policies (`viewPolicy`, `updatePolicy`). Also serves as the class-level `#[Aura]` attribute. |
-| **`AuraProperty`** | A single property description: `readable`, `writable`, `type`, `variableName`, `description`, `hasDefaultValue`/`defaultValue`, `viewPolicy`, `updatePolicy`. Also serves as the `#[AuraProperty]` property attribute.     |
+| **`AuraProperty`** | A single property description: `readable`, `writable`, `type`, `variableName`, `description`, `hasDefaultValue`/`defaultValue`, `validationRules`, `viewPolicy`, `updatePolicy`. Also serves as the `#[AuraProperty]` property attribute. |
+| **`FinalAura`** / **`FinalAuraProperty`** | The finalized (immutable, fully populated) counterparts produced by `Aura::finalize()` once all parsers have been merged. Handlers and Blade components work with these. |
 | **`AuraType`**     | The type system: `AuraNamedType` (named/generic type), `AuraUnionType` (`A\|B`), `AuraIntersectionType` (`A&B`). Provides `contains()` and a `nullable` flag.                                                             |
 
 ---
@@ -238,21 +244,28 @@ use TTBooking\Formster\Entities\AuraNamedType;
 class Profile
 {
     #[AuraProperty(
-        readable: true,
-        writable: true,
         type: new AuraNamedType('string'),
-        variableName: 'nickname',
         description: 'Nickname',
+        validationRules: ['...', 'min:3'],
     )]
     public string $nickname;
 }
+```
+
+Every `#[AuraProperty]` parameter is optional — the attribute only complements or overrides what the other parsers have found. Properties can also be described at the class level via the `properties` parameter of `#[Aura]` (keyed by property name):
+
+```php
+#[Aura(properties: [
+    'text' => new AuraProperty(validationRules: ['...', 'min:3']),
+])]
+class Frankenstein extends Model {}
 ```
 
 ---
 
 ## Property parsers
 
-Parsers are responsible for extracting metadata. The active parsers and their order are set by the `formster.property_parser` option (default `phpstan,reflection`).
+Parsers are responsible for extracting metadata. The active parsers and their order are set by the `formster.property_parser` option (default `aura,phpstan,reflection`).
 
 | Driver               | Data source                                                                                                     |
 | -------------------- | -------------------------------------------------------------------------------------------------------------- |
@@ -267,7 +280,7 @@ Parsers are responsible for extracting metadata. The active parsers and their or
 
 If several drivers are listed comma-separated in `property_parser`, the `aggregate` driver is used automatically. It runs the object through each parser in turn and **merges** the results via `Aura::merge()`.
 
-> **Order matters:** parsers listed later have priority — their non-empty values override data from the earlier ones. For example, with `phpstan,reflection` the PHPDoc data is complemented and, on collision, overridden by information from native types.
+> **Order matters:** parsers listed later have priority. Same-named properties are merged field by field (`AuraProperty::merge()`): each piece of metadata (type, description, policy, …) is taken from the later parser when set there, and kept from the earlier one otherwise. Validation rules are merged using the `'...'` notation (see [Validation](#validation)).
 
 ### Caching
 
@@ -282,38 +295,61 @@ A handler (`PropertyHandler`) ties a property type to a widget and to the write 
 ```php
 interface PropertyHandler
 {
-    public static function satisfies(AuraProperty $property): bool; // does the type match
-    public function component(): string;                            // Blade widget
-    public function handle(object $object, Request $request): void; // write the value
-    public function validate(Request $request): bool;               // validation
+    public static function satisfies(FinalAuraProperty $property): bool; // does the type match
+    public function component(): string;                                 // Blade widget
+    public function validationRules(): string|array;                     // validation rules for the field
+    public function handle(object $object, Request $request): void;      // write the value
 }
 ```
 
 `HandlerFactory::for($property)` iterates over the handlers from the `formster.property_handlers` config and returns the first one whose `satisfies()` returned `true`. If none match, `FallbackHandler` is used.
 
-> `validate()` is reserved for the upcoming validation subsystem — the package does not call it yet.
+> Handlers receive the finalized `FinalAuraProperty`. The rules returned by `validationRules()` are applied automatically when the submission is processed — see [Validation](#validation).
 
 ---
 
 ## Supported types and widgets
 
-| Property type         | Handler               | Widget (Blade)               | HTML field                          |
-| --------------------- | --------------------- | ---------------------------- | ----------------------------------- |
-| `bool`                | `BooleanHandler`      | `form.checkbox`              | `<input type="checkbox">`           |
-| `int`                 | `IntegerHandler`      | `form.number`                | `<input type="number">`             |
-| `float`               | `FloatHandler`        | `form.decimal`               | `<input type="number" step="0.01">` |
-| `string`              | `StringHandler`       | `form.text`                  | `<input type="text">`               |
-| `BackedEnum`          | `EnumHandler`         | `form.radio` / `form.select` | radio buttons or a dropdown         |
-| `DateTimeInterface`   | `DateTimeHandler`     | `form.datetime`              | `<input type="datetime-local">`     |
-| `DateTimeZone`        | `DateTimeZoneHandler` | `form.timezone`              | `<select>` with time zones          |
-| `Color`               | `ColorHandler`        | `form.color`                 | `<input type="color">`              |
-| `File` / `list<File>` | `FileHandler`         | `form.file`                  | `<input type="file">`               |
-| `Image`               | `ImageHandler`        | `form.image`                 | `<input type="file">` + preview     |
-| *anything else*       | `FallbackHandler`     | `form.disclaimer`            | an "unsupported type" message       |
+| Property type         | Handler               | Widget (Blade)               | HTML field                          | Default validation rules        |
+| --------------------- | --------------------- | ---------------------------- | ----------------------------------- | ------------------------------- |
+| `bool`                | `BooleanHandler`      | `form.checkbox`              | `<input type="checkbox">`           | `sometimes\|in:on`              |
+| `int`                 | `IntegerHandler`      | `form.number`                | `<input type="number">`             | `required\|integer`             |
+| `float`               | `FloatHandler`        | `form.decimal`               | `<input type="number" step="0.01">` | `required\|numeric`             |
+| `string`              | `StringHandler`       | `form.text`                  | `<input type="text">`               | `required\|string`              |
+| `BackedEnum`          | `EnumHandler`         | `form.radio` / `form.select` | radio buttons or a dropdown         | `required` + `Rule::enum(...)`  |
+| `DateTimeInterface`   | `DateTimeHandler`     | `form.datetime`              | `<input type="datetime-local">`     | `required\|date`                |
+| `DateTimeZone`        | `DateTimeZoneHandler` | `form.timezone`              | `<select>` with time zones          | `required\|timezone`            |
+| `Color`               | `ColorHandler`        | `form.color`                 | `<input type="color">`              | `required\|hex_color`           |
+| `File` / `list<File>` | `FileHandler`         | `form.file`                  | `<input type="file">`               | `required\|file`                |
+| `Image`               | `ImageHandler`        | `form.image`                 | `<input type="file">` + preview     | `required\|image:allow_svg`     |
+| *anything else*       | `FallbackHandler`     | `form.disclaimer`            | an "unsupported type" message       | —                               |
 
 **Enum.** `EnumHandler` renders radio buttons (`radio`) when the number of options does not exceed the `buttonLimit` threshold (default **2**), and a dropdown (`select`) otherwise.
 
 Enum option descriptions are localized (see [Localization](#localization)); if no translation is found, the case's PHPDoc comment or its "humanized" name is used.
+
+---
+
+## Validation
+
+Before writing anything, `ActionHandler::update()` validates the request with the standard `$request->validate()`. The rules are collected automatically:
+
+1. Every handler contributes default rules for its type via `validationRules()` (see the table above).
+2. Per-property rules are declared with the `validationRules` parameter of the `#[AuraProperty]` attribute — as a string (`'required|min:3'`), an array, or a closure returning a rule list (closures in attributes require PHP ≥ 8.5).
+3. Rules declared on a property **replace** the handler defaults. To **extend** the defaults instead, include the `'...'` element — it is substituted with the handler's rules (the lists are flattened and de-duplicated):
+
+```php
+use TTBooking\Formster\Entities\Aura;
+use TTBooking\Formster\Entities\AuraProperty;
+
+#[Aura(properties: [
+    // resulting rules: required|string|min:3
+    'text' => new AuraProperty(validationRules: ['...', 'min:3']),
+])]
+class Frankenstein extends Model {}
+```
+
+On failure the usual Laravel mechanics kick in (redirect back with `$errors`). The widgets render the message below the field in a `formster-validation-failed` block, and error messages address the field by its localized description (see [Localization](#localization)).
 
 ---
 
@@ -453,7 +489,7 @@ Each widget can also be called directly: `form.text`, `form.number`, `form.decim
 <x-formster::form.text :property="$property" />
 ```
 
-Widgets use `@aware` to inherit context from the parent table (`object`, `editable`; the file widgets also inherit `action`) and show either an editable field or a read-only view.
+Widgets use `@aware` to inherit context from the parent table (`object`, `editable`; the file widgets also inherit `action`) and show either an editable field or a read-only view. When validation fails, the error message is rendered below the field in a `<div class="formster-validation-failed">` block.
 
 To change the markup, publish the templates (`vendor:publish --tag=formster-views`) and edit the files in `resources/views/vendor/formster`.
 
@@ -594,7 +630,7 @@ After publishing (`vendor:publish --tag=formster-config`) the `config/formster.p
 return [
 
     // The property parser(s). Several — comma-separated (enables aggregation).
-    'property_parser' => env('FORMSTER_PROPERTY_PARSER', 'phpstan,reflection'),
+    'property_parser' => env('FORMSTER_PROPERTY_PARSER', 'aura,phpstan,reflection'),
 
     // Parsing-result cache.
     'property_cache' => [
@@ -642,7 +678,7 @@ return [
 
 | Variable                                | Purpose                     | Default              |
 | --------------------------------------- | --------------------------- | -------------------- |
-| `FORMSTER_PROPERTY_PARSER`              | Property parser(s)          | `phpstan,reflection` |
+| `FORMSTER_PROPERTY_PARSER`              | Property parser(s)          | `aura,phpstan,reflection` |
 | `FORMSTER_ENFORCE_POLICIES`             | Policy enforcement mode     | `false`              |
 | `FORMSTER_PROPERTY_CACHE_STORE`         | Cache store                 | standard             |
 | `FORMSTER_PROPERTY_CACHE_TTL`           | Cache TTL (sec)             | forever              |
@@ -676,13 +712,13 @@ namespace App\Formster\Handlers;
 use App\Formster\Types\Money;
 use Illuminate\Http\Request;
 use TTBooking\Formster\Contracts\PropertyHandler;
-use TTBooking\Formster\Entities\AuraProperty;
+use TTBooking\Formster\Entities\FinalAuraProperty;
 
 class MoneyHandler implements PropertyHandler
 {
-    public function __construct(public AuraProperty $property) {}
+    public function __construct(public FinalAuraProperty $property) {}
 
-    public static function satisfies(AuraProperty $property): bool
+    public static function satisfies(FinalAuraProperty $property): bool
     {
         return $property->type->contains(Money::class);
     }
@@ -692,21 +728,23 @@ class MoneyHandler implements PropertyHandler
         return 'formster::form.money';
     }
 
+    public function validationRules(): string|array
+    {
+        return $this->property->mergeValidationRules();
+    }
+
     public function handle(object $object, Request $request): void
     {
         $object->{$this->property->variableName} = new Money($request->{$this->property->variableName});
     }
-
-    public function validate(Request $request): bool
-    {
-        return true;
-    }
 }
 ```
 
+`mergeValidationRules($defaults)` merges the rules declared on the property with the handler's default rules using the `'...'` notation (see [Validation](#validation)).
+
 Register the handler in `config/formster.php` (in the `property_handlers` array, before `FileHandler`/`FallbackHandler`) and create the `form.money` Blade widget.
 
-The generator stub can be published and customized by placing `stubs/handler.stub` in the application root.
+The generator stub can be published (`vendor:publish --tag=formster-stub`) and customized — the command picks up `stubs/formster-handler.stub` from the application root.
 
 ---
 
@@ -731,7 +769,7 @@ When the model is deleted, the observer removes all attached files (`File`/`Imag
 | Facade            | Class                   | Purpose                                                                                 |
 | ----------------- | ----------------------- | --------------------------------------------------------------------------------------- |
 | `PropertyParser`  | `PropertyParserManager` | `parse($objectOrClass): Aura` — parse an object/class into metadata                     |
-| `PropertyHandler` | `HandlerFactory`        | `for(AuraProperty $property): PropertyHandler` — pick a handler                         |
+| `PropertyHandler` | `HandlerFactory`        | `for(FinalAuraProperty $property): PropertyHandler` — pick a handler                    |
 | `ActionHandler`   | `ActionHandler`         | `update(Request $request, object $object): object` — apply request data to the object   |
 
 ```php
