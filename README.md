@@ -270,7 +270,7 @@ class User extends Model {}
 
 The filter is applied at the finalization stage, so it also strips properties discovered by the other parsers — PHPDoc or reflection. When auras are merged (aggregation, inheritance), both lists are combined; `exclude` always beats `include`.
 
-Attributes are picked up from parent classes as well: the `aura` parser walks the whole inheritance chain and merges the metadata into a single aura — shared descriptions and filters can live on a base class.
+Attributes are picked up from parent classes as well: the `aura` parser walks the whole inheritance chain and merges the metadata into a single aura — shared descriptions and filters can live on a base class. On conflicts the descendant wins: metadata declared closer to the class itself overrides the ancestors'.
 
 ---
 
