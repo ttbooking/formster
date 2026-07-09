@@ -17,6 +17,8 @@ readonly class Aura
 
     /**
      * @param  iterable<array-key, AuraProperty>  $properties
+     * @param  list<string>|null  $include
+     * @param  list<string>  $exclude
      */
     final public function __construct(
         public string $summary = '',
@@ -24,6 +26,8 @@ readonly class Aura
         iterable $properties = [],
         public string $viewPolicy = 'view',
         public string $updatePolicy = 'update',
+        protected ?array $include = null,
+        protected array $exclude = [],
     ) {
         $this->properties = collect($properties)->keyBy(static function (AuraProperty $property, int|string $key) {
             if (is_int($key)) {
@@ -49,7 +53,7 @@ readonly class Aura
         return new FinalAura(
             summary: $this->summary,
             description: $this->description,
-            properties: $this->properties->map->finalize(),
+            properties: $this->properties->only($this->include)->except($this->exclude)->map->finalize(),
             viewPolicy: $this->viewPolicy,
             updatePolicy: $this->updatePolicy,
         );
@@ -68,6 +72,10 @@ readonly class Aura
                 ->union($aura->properties),
             viewPolicy: $aura->viewPolicy !== 'view' ? $aura->viewPolicy : $this->viewPolicy,
             updatePolicy: $aura->updatePolicy !== 'update' ? $aura->updatePolicy : $this->updatePolicy,
+            include: isset($this->include, $aura->include)
+                ? array_values(array_unique([...$this->include, ...$aura->include]))
+                : $this->include ?? $aura->include,
+            exclude: array_values(array_unique([...$this->exclude, ...$aura->exclude])),
         );
     }
 }
