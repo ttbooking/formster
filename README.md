@@ -180,18 +180,18 @@ The full "model → form → submission" cycle consists of three stages.
    (rendering the form)            (processing the submission)
 ```
 
-1. **Parsing.** `PropertyParser::parse($object)` inspects the object and returns an aggregate **`Aura`** — a class description with a list of **`AuraProperty`** entries (name, type, readability/writability, default value, validation rules, access policies). Before use, `finalize()` turns the aggregate into the immutable **`FinalAura`** / **`FinalAuraProperty`** counterparts — this is what handlers and widgets receive.
+1. **Parsing.** `PropertyParser::parse($object)` inspects the object and returns an aggregate **`Aura`** — a class description with a list of **`AuraProperty`** entries (name, type, readability/writability, default value, validation rules, access policies). Before use, `finalize()` filters the property list against the `include`/`exclude` lists of `#[Aura]` and turns the aggregate into the immutable **`FinalAura`** / **`FinalAuraProperty`** counterparts — this is what handlers and widgets receive.
 2. **Handler selection.** For each property, `HandlerFactory::for($property)` picks the first `PropertyHandler` whose static `satisfies()` method matches the property type.
 3. **Rendering and processing.** When rendering the form the handler's `component()` names the Blade widget. On submission the request is first validated against the rules from `validationRules()`, then `handle()` casts the value from the `Request` and writes it into the object.
 
 ### Key entities
 
-| Entity             | Purpose                                                                                                                                                                                                                     |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`Aura`**         | The class "aura": short (`summary`) and full (`description`) descriptions, a collection of properties (indexed by name), and default policies (`viewPolicy`, `updatePolicy`). Also serves as the class-level `#[Aura]` attribute. |
-| **`AuraProperty`** | A single property description: `readable`, `writable`, `type`, `variableName`, `description`, `hasDefaultValue`/`defaultValue`, `validationRules`, `viewPolicy`, `updatePolicy`. Also serves as the `#[AuraProperty]` property attribute. |
-| **`FinalAura`** / **`FinalAuraProperty`** | The finalized (immutable, fully populated) counterparts produced by `Aura::finalize()` once all parsers have been merged. Handlers and Blade components work with these. |
-| **`AuraType`**     | The type system: `AuraNamedType` (named/generic type), `AuraUnionType` (`A\|B`), `AuraIntersectionType` (`A&B`). Provides `contains()` and a `nullable` flag.                                                             |
+| Entity                                    | Purpose                                                                                                                                                                                                                                                                     |
+| ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`Aura`**                                | The class "aura": short (`summary`) and full (`description`) descriptions, a collection of properties (indexed by name), default policies (`viewPolicy`, `updatePolicy`), and the `include`/`exclude` property filters. Also serves as the class-level `#[Aura]` attribute. |
+| **`AuraProperty`**                        | A single property description: `readable`, `writable`, `type`, `variableName`, `description`, `hasDefaultValue`/`defaultValue`, `validationRules`, `viewPolicy`, `updatePolicy`. Also serves as the `#[AuraProperty]` property attribute.                                   |
+| **`FinalAura`** / **`FinalAuraProperty`** | The finalized (immutable, fully populated) counterparts produced by `Aura::finalize()` once all parsers have been merged. Handlers and Blade components work with these.                                                                                                    |
+| **`AuraType`**                            | The type system: `AuraNamedType` (named/generic type), `AuraUnionType` (`A\|B`), `AuraIntersectionType` (`A&B`). Provides `contains()` and a `nullable` flag.                                                                                                               |
 
 ---
 
@@ -261,20 +261,31 @@ Every `#[AuraProperty]` parameter is optional — the attribute only complements
 class Frankenstein extends Model {}
 ```
 
+The `#[Aura]` attribute can also decide which properties make it into the form: `include` is a whitelist (omit it and everything passes), `exclude` is a blacklist:
+
+```php
+#[Aura(exclude: ['password', 'remember_token'])]
+class User extends Model {}
+```
+
+The filter is applied at the finalization stage, so it also strips properties discovered by the other parsers — PHPDoc or reflection. When auras are merged (aggregation, inheritance), both lists are combined; `exclude` always beats `include`.
+
+Attributes are picked up from parent classes as well: the `aura` parser walks the whole inheritance chain and merges the metadata into a single aura — shared descriptions and filters can live on a base class.
+
 ---
 
 ## Property parsers
 
 Parsers are responsible for extracting metadata. The active parsers and their order are set by the `formster.property_parser` option (default `aura,phpstan,reflection`).
 
-| Driver               | Data source                                                                                                     |
-| -------------------- | -------------------------------------------------------------------------------------------------------------- |
-| `aura`               | The `#[Aura]` / `#[AuraProperty]` PHP attributes                                                                |
-| `reflection`         | Native typed `public` properties                                                                               |
-| `phpdoc`             | The class PHPDoc block via `phpdocumentor/reflection-docblock`                                                 |
+| Driver               | Data source                                                                                                       |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `aura`               | The `#[Aura]` / `#[AuraProperty]` PHP attributes — from the class itself and all of its ancestors                 |
+| `reflection`         | Native typed `public` properties                                                                                  |
+| `phpdoc`             | The class PHPDoc block via `phpdocumentor/reflection-docblock`                                                    |
 | `phpstan`            | PHPDoc via `phpstan/phpdoc-parser` — supports generics, const expressions, and **recursive nested-class parsing** |
-| `aggregate`          | Composite: combines several parsers                                                                            |
-| (internal) `caching` | A decorator that caches the result of any parser                                                              |
+| `aggregate`          | Composite: combines several parsers                                                                               |
+| (internal) `caching` | A decorator that caches the result of any parser                                                                  |
 
 ### Aggregation
 
@@ -310,19 +321,19 @@ interface PropertyHandler
 
 ## Supported types and widgets
 
-| Property type         | Handler               | Widget (Blade)               | HTML field                          | Default validation rules        |
-| --------------------- | --------------------- | ---------------------------- | ----------------------------------- | ------------------------------- |
-| `bool`                | `BooleanHandler`      | `form.checkbox`              | `<input type="checkbox">`           | `sometimes\|in:on`              |
-| `int`                 | `IntegerHandler`      | `form.number`                | `<input type="number">`             | `required\|integer`             |
-| `float`               | `FloatHandler`        | `form.decimal`               | `<input type="number" step="0.01">` | `required\|numeric`             |
-| `string`              | `StringHandler`       | `form.text`                  | `<input type="text">`               | `required\|string`              |
-| `BackedEnum`          | `EnumHandler`         | `form.radio` / `form.select` | radio buttons or a dropdown         | `required` + `Rule::enum(...)`  |
-| `DateTimeInterface`   | `DateTimeHandler`     | `form.datetime`              | `<input type="datetime-local">`     | `required\|date`                |
-| `DateTimeZone`        | `DateTimeZoneHandler` | `form.timezone`              | `<select>` with time zones          | `required\|timezone`            |
-| `Color`               | `ColorHandler`        | `form.color`                 | `<input type="color">`              | `required\|hex_color`           |
-| `File` / `list<File>` | `FileHandler`         | `form.file`                  | `<input type="file">`               | `required\|file`                |
-| `Image`               | `ImageHandler`        | `form.image`                 | `<input type="file">` + preview     | `required\|image:allow_svg`     |
-| *anything else*       | `FallbackHandler`     | `form.disclaimer`            | an "unsupported type" message       | —                               |
+| Property type         | Handler               | Widget (Blade)               | HTML field                          | Default validation rules       |
+| --------------------- | --------------------- | ---------------------------- | ----------------------------------- | ------------------------------ |
+| `bool`                | `BooleanHandler`      | `form.checkbox`              | `<input type="checkbox">`           | `sometimes\|in:on`             |
+| `int`                 | `IntegerHandler`      | `form.number`                | `<input type="number">`             | `required\|integer`            |
+| `float`               | `FloatHandler`        | `form.decimal`               | `<input type="number" step="0.01">` | `required\|numeric`            |
+| `string`              | `StringHandler`       | `form.text`                  | `<input type="text">`               | `required\|string`             |
+| `BackedEnum`          | `EnumHandler`         | `form.radio` / `form.select` | radio buttons or a dropdown         | `required` + `Rule::enum(...)` |
+| `DateTimeInterface`   | `DateTimeHandler`     | `form.datetime`              | `<input type="datetime-local">`     | `required\|date`               |
+| `DateTimeZone`        | `DateTimeZoneHandler` | `form.timezone`              | `<select>` with time zones          | `required\|timezone`           |
+| `Color`               | `ColorHandler`        | `form.color`                 | `<input type="color">`              | `required\|hex_color`          |
+| `File` / `list<File>` | `FileHandler`         | `form.file`                  | `<input type="file">`               | `required\|file`               |
+| `Image`               | `ImageHandler`        | `form.image`                 | `<input type="file">` + preview     | `required\|image:allow_svg`    |
+| *anything else*       | `FallbackHandler`     | `form.disclaimer`            | an "unsupported type" message       | —                              |
 
 **Enum.** `EnumHandler` renders radio buttons (`radio`) when the number of options does not exceed the `buttonLimit` threshold (default **2**), and a dropdown (`select`) otherwise.
 
@@ -456,10 +467,10 @@ All components are available under the `formster::` namespace.
 ### Structural components
 
 | Component                  | Purpose                                                            | Main parameters                                    |
-| -------------------------- | ----------------------------------------------------------------- | -------------------------------------------------- |
-| `<x-formster::form>`       | A full `<form>` (POST + `@method('PUT')`, "Save" button)          | `:object`, `action`, `:show-defaults`              |
-| `<x-formster::form.table>` | A table of properties (view or edit)                              | `:object`, `action`, `:editable`, `:show-defaults` |
-| `<x-formster::form.row>`   | A table row for a single property                                 | `:property`                                        |
+| -------------------------- | ------------------------------------------------------------------ | -------------------------------------------------- |
+| `<x-formster::form>`       | A full `<form>` (POST + `@method('PUT')`, "Save" button)           | `:object`, `action`, `:show-defaults`              |
+| `<x-formster::form.table>` | A table of properties (view or edit)                               | `:object`, `action`, `:editable`, `:show-defaults` |
+| `<x-formster::form.row>`   | A table row for a single property                                  | `:property`                                        |
 | `<x-formster::form.input>` | An input widget for a property (picks the component via a handler) | `:property`, `:object`                             |
 
 **Examples:**
@@ -565,16 +576,16 @@ Interface labels and property descriptions are translatable. The package ships w
 
 The `lang/vendor/formster/{locale}/form.php` file:
 
-| Key                              | EN                           |
-| -------------------------------- | ---------------------------- |
-| `description`                    | Parameter                    |
-| `value`                          | Value                        |
-| `default`                        | Default                      |
-| `na`                             | N/A                          |
-| `null`                           | NULL                         |
-| `on` / `off`                     | ✔️ / ❌                      |
-| `open` / `download` / `uploaded` | open / download / uploaded   |
-| `save`                           | Save                         |
+| Key                              | EN                         |
+| -------------------------------- | -------------------------- |
+| `description`                    | Parameter                  |
+| `value`                          | Value                      |
+| `default`                        | Default                    |
+| `na`                             | N/A                        |
+| `null`                           | NULL                       |
+| `on` / `off`                     | ✔️ / ❌                    |
+| `open` / `download` / `uploaded` | open / download / uploaded |
+| `save`                           | Save                       |
 
 ### Property and enum-value descriptions
 
@@ -676,18 +687,18 @@ return [
 
 ### Environment variables
 
-| Variable                                | Purpose                     | Default              |
-| --------------------------------------- | --------------------------- | -------------------- |
-| `FORMSTER_PROPERTY_PARSER`              | Property parser(s)          | `aura,phpstan,reflection` |
-| `FORMSTER_ENFORCE_POLICIES`             | Policy enforcement mode     | `false`              |
-| `FORMSTER_PROPERTY_CACHE_STORE`         | Cache store                 | standard             |
-| `FORMSTER_PROPERTY_CACHE_TTL`           | Cache TTL (sec)             | forever              |
-| `FORMSTER_DISK`                         | Disk for uploads            | default disk         |
-| `FORMSTER_STATIC_DISK`                  | Disk for static files       | `FORMSTER_DISK`      |
-| `FORMSTER_CONTENT_DISPOSITION`          | File disposition            | `attachment`         |
-| `FORMSTER_SHOW_FILENAME`                | Show the file name          | `true`               |
-| `FORMSTER_PREVIEW_WIDTH` / `_HEIGHT`    | Preview size                | `100` / `100`        |
-| `FORMSTER_PREVIEW_SCALE_DOWN_THRESHOLD` | Preview scale-down threshold | `10240`             |
+| Variable                                | Purpose                      | Default                   |
+| --------------------------------------- | ---------------------------- | ------------------------- |
+| `FORMSTER_PROPERTY_PARSER`              | Property parser(s)           | `aura,phpstan,reflection` |
+| `FORMSTER_ENFORCE_POLICIES`             | Policy enforcement mode      | `false`                   |
+| `FORMSTER_PROPERTY_CACHE_STORE`         | Cache store                  | standard                  |
+| `FORMSTER_PROPERTY_CACHE_TTL`           | Cache TTL (sec)              | forever                   |
+| `FORMSTER_DISK`                         | Disk for uploads             | default disk              |
+| `FORMSTER_STATIC_DISK`                  | Disk for static files        | `FORMSTER_DISK`           |
+| `FORMSTER_CONTENT_DISPOSITION`          | File disposition             | `attachment`              |
+| `FORMSTER_SHOW_FILENAME`                | Show the file name           | `true`                    |
+| `FORMSTER_PREVIEW_WIDTH` / `_HEIGHT`    | Preview size                 | `100` / `100`             |
+| `FORMSTER_PREVIEW_SCALE_DOWN_THRESHOLD` | Preview scale-down threshold | `10240`                   |
 
 ---
 
@@ -766,11 +777,11 @@ When the model is deleted, the observer removes all attached files (`File`/`Imag
 
 ## Facades and public API
 
-| Facade            | Class                   | Purpose                                                                                 |
-| ----------------- | ----------------------- | --------------------------------------------------------------------------------------- |
-| `PropertyParser`  | `PropertyParserManager` | `parse($objectOrClass): Aura` — parse an object/class into metadata                     |
-| `PropertyHandler` | `HandlerFactory`        | `for(FinalAuraProperty $property): PropertyHandler` — pick a handler                    |
-| `ActionHandler`   | `ActionHandler`         | `update(Request $request, object $object): object` — apply request data to the object   |
+| Facade            | Class                   | Purpose                                                                               |
+| ----------------- | ----------------------- | ------------------------------------------------------------------------------------- |
+| `PropertyParser`  | `PropertyParserManager` | `parse($objectOrClass): Aura` — parse an object/class into metadata                   |
+| `PropertyHandler` | `HandlerFactory`        | `for(FinalAuraProperty $property): PropertyHandler` — pick a handler                  |
+| `ActionHandler`   | `ActionHandler`         | `update(Request $request, object $object): object` — apply request data to the object |
 
 ```php
 use TTBooking\Formster\Facades\PropertyParser;
