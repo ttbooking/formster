@@ -30,7 +30,7 @@ class AuraParser implements HigherOrderAware, PropertyParser
         $refClass = new ReflectionClass($objectOrClass);
 
         do {
-            $aura = isset($aura) ? $aura->merge($this->parseClass($refClass)) : $this->parseClass($refClass);
+            $aura = isset($aura) ? $this->parseClass($refClass)->merge($aura) : $this->parseClass($refClass);
         } while (false !== $refClass = $refClass->getParentClass());
 
         return $aura;

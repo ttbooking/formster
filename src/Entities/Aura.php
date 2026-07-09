@@ -6,12 +6,15 @@ namespace TTBooking\Formster\Entities;
 
 use Attribute;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Traits\Conditionable;
 use LogicException;
 use TypeError;
 
 #[Attribute(Attribute::TARGET_CLASS)]
 readonly class Aura
 {
+    use Conditionable;
+
     /** @var Collection<string, AuraProperty> */
     public Collection $properties;
 

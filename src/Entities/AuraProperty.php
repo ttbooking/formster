@@ -6,6 +6,7 @@ namespace TTBooking\Formster\Entities;
 
 use Attribute;
 use Closure;
+use Illuminate\Support\Traits\Conditionable;
 use Stringable;
 use TTBooking\Formster\Concerns\MergesValidationRules;
 use TypeError;
@@ -17,7 +18,7 @@ use UnexpectedValueException;
 #[Attribute(Attribute::TARGET_PROPERTY)]
 class AuraProperty implements Stringable
 {
-    use MergesValidationRules;
+    use Conditionable, MergesValidationRules;
 
     final public function __construct(
         public readonly ?bool $readable = true,
