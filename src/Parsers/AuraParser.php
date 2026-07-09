@@ -28,13 +28,26 @@ class AuraParser implements HigherOrderAware, PropertyParser
     public function parse(object|string $objectOrClass): Aura
     {
         $refClass = new ReflectionClass($objectOrClass);
+
+        do {
+            $aura = isset($aura) ? $aura->merge($this->parseClass($refClass)) : $this->parseClass($refClass);
+        } while (false !== $refClass = $refClass->getParentClass());
+
+        return $aura;
+    }
+
+    /**
+     * @param  ReflectionClass<object>  $refClass
+     */
+    protected function parseClass(ReflectionClass $refClass): Aura
+    {
         $aura = ($refClass->getAttributes(Aura::class)[0] ?? null)?->newInstance() ?? new Aura;
 
         $properties = [];
         $refProps = $refClass->getProperties(ReflectionProperty::IS_PUBLIC);
         foreach ($refProps as $refProp) {
             if ($refPropAttr = $refProp->getAttributes(AuraProperty::class)[0] ?? null) {
-                $properties[] = $refPropAttr->newInstance();
+                $properties[$refProp->name] = $refPropAttr->newInstance();
             }
         }
 
