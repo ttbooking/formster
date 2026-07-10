@@ -6,19 +6,19 @@
 [![Total Downloads](https://img.shields.io/packagist/dt/ttbooking/formster.svg?style=flat-square)](https://packagist.org/packages/ttbooking/formster)
 [![License](https://img.shields.io/packagist/l/ttbooking/formster.svg?style=flat-square)](LICENSE.md)
 
-[Русский](README.ru.md) · **English**
+**English** · [Русский](README.ru.md)
 
 **Formster** is a Laravel library that **automatically generates HTML forms and read-only tables from any PHP object or Eloquent model**, based on property types. You don't have to describe every form field by hand: Formster reads the object's structure from PHPDoc annotations (`@property`), native PHP types, or PHP attributes, picks a suitable input widget for each property, and takes care of processing the submitted data.
 
 ```blade
 {{-- The whole form — with every field, label, and a "Save" button — is generated in a single line --}}
-<x-formster::form :object="$user" action="{{ route('users.update', $user) }}" />
+<x-formster::form :object="$order" action="{{ route('orders.update', $order) }}" />
 ```
 
 ```php
 // Handling the form submission is a one-liner too
-Route::put('/users/{user}', function (Request $request, User $user) {
-    ActionHandler::update($request, $user)->save();
+Route::put('/orders/{order}', function (Request $request, Order $order) {
+    ActionHandler::update($request, $order)->save();
 
     return back();
 });
@@ -63,9 +63,9 @@ Route::put('/users/{user}', function (Request $request, User $user) {
 - 🧩 **Rich type system.** Support for union (`A|B`), intersection (`A&B`), nullable, generics (`Collection<int, User>`, `list<File>`, `class-string<User>`), and recursive parsing of nested classes.
 - 🎛️ **Ready-made widgets** for strings, integers, floats, booleans, enums, dates, time zones, colors, files, and images.
 - ✅ **Automatic validation.** Every handler contributes default rules for its field; per-property rules are declared in the metadata and merged with the defaults via the `'...'` notation, and error messages are rendered next to the fields.
-- 🖼️ **File and image pseudotypes** with `Storage` uploads, automatic previews (Intervention Image), and old-file cleanup.
+- 🖼️ **File and image pseudotypes** with `Storage` uploads, automatic previews (Intervention Image), and orphaned file cleanup.
 - 🔒 **Laravel Gate integration.** Viewing and editing of every property is governed by policies (`viewPolicy` / `updatePolicy`), with a lenient mode by default and a switchable enforcing mode.
-- 🌍 **Localization** of field labels, descriptions, and enum values (English and Russian out of the box).
+- 🌍 **Localization** of field labels, descriptions, and enum cases (English and Russian out of the box).
 - ⚡ **Caching** of parsing results.
 - 🛠️ **Extensibility** — custom type handlers are scaffolded by an Artisan command.
 
@@ -115,9 +115,9 @@ use Illuminate\Database\Eloquent\Model;
 use TTBooking\Formster\Entities\Aura;
 
 /**
- * @property string $text
- * @property int $integer
- * @property bool $flag
+ * @property string $text Some text
+ * @property int $number Some number
+ * @property bool $flag Some flag
  */
 #[Aura]
 class Frankenstein extends Model
@@ -141,9 +141,9 @@ class Frankenstein extends Model
 ### 3. Handle the submission
 
 ```php
+use App\Models\Frankenstein;
 use Illuminate\Http\Request;
 use TTBooking\Formster\Facades\ActionHandler;
-use App\Models\Frankenstein;
 
 Route::get('/formster/{model}',      fn (Frankenstein $model) => view('table', compact('model')))->name('view');
 Route::get('/formster/{model}/edit', fn (Frankenstein $model) => view('form', compact('model')))->name('edit');
@@ -151,7 +151,7 @@ Route::get('/formster/{model}/edit', fn (Frankenstein $model) => view('form', co
 Route::put('/formster/{model}', function (Request $request, Frankenstein $model) {
     ActionHandler::update($request, $model)->save();
 
-    return redirect()->back();
+    return back();
 })->name('update');
 ```
 
@@ -205,7 +205,7 @@ Formster supports **three ways** to declare properties, and they can be combined
 /**
  * @property string $name              User name
  * @property int $age
- * @property ?string $bio              May be null
+ * @property string|null $bio          May be null
  * @property \App\Enums\Status $status
  * @property-read int $id              Read-only
  * @property-write string $password    Write-only
@@ -301,12 +301,12 @@ Parsing results are cached automatically (the `CachingParser` decorator). The st
 
 ## Property handlers
 
-A handler (`PropertyHandler`) ties a property type to a widget and to the write logic. The contract:
+A handler (`PropertyHandler`) ties a property type to a widget, validation rules, and to the write logic. The contract:
 
 ```php
 interface PropertyHandler
 {
-    public static function satisfies(FinalAuraProperty $property): bool; // does the type match
+    public static function satisfies(FinalAuraProperty $property): bool; // does the type match?
     public function component(): string;                                 // Blade widget
     public function validationRules(): string|array;                     // validation rules for the field
     public function handle(object $object, Request $request): void;      // write the value
@@ -335,9 +335,9 @@ interface PropertyHandler
 | `Image`               | `ImageHandler`        | `form.image`                 | `<input type="file">` + preview     | `required\|image:allow_svg`    |
 | *anything else*       | `FallbackHandler`     | `form.disclaimer`            | an "unsupported type" message       | —                              |
 
-**Enum.** `EnumHandler` renders radio buttons (`radio`) when the number of options does not exceed the `buttonLimit` threshold (default **2**), and a dropdown (`select`) otherwise.
+**Enum.** `EnumHandler` renders radio buttons (`radio`) when the number of cases does not exceed the `buttonLimit` threshold (default **2**), and a dropdown (`select`) otherwise.
 
-Enum option descriptions are localized (see [Localization](#localization)); if no translation is found, the case's PHPDoc comment or its "humanized" name is used.
+Enum case descriptions are localized (see [Localization](#localization)); if no translation is found, the case's PHPDoc comment or its "humanized" name is used.
 
 ---
 
@@ -371,14 +371,14 @@ Beyond scalar types, Formster provides four **pseudotypes** in the `TTBooking\Fo
 ```php
 use TTBooking\Formster\Types\{Color, DateTimeZone, File, Image};
 
+/**
+ * @property Color $brand_color
+ * @property DateTimeZone $timezone
+ * @property File $manual
+ * @property Image $photo
+ */
 class Product extends Model
 {
-    /**
-     * @property ?Color $brand_color
-     * @property ?DateTimeZone $timezone
-     * @property ?File $manual
-     * @property ?Image $photo
-     */
     protected function casts(): array
     {
         return [
@@ -408,10 +408,10 @@ Extends the native `\DateTimeZone`, rendered as a `<select>` grouped by region. 
 ```php
 /**
  * All zones, grouped by region (default):
- * @property ?DateTimeZone $tz
+ * @property DateTimeZone $tz
  *
- * Russia-only zones (two-letter ISO country code):
- * @property ?DateTimeZone<'RU'> $tz_ru
+ * US-only zones (two-letter ISO country code):
+ * @property DateTimeZone<"US"> $tz_us
  */
 ```
 
@@ -424,7 +424,7 @@ Pseudotype parameters are set via a generic annotation: `File<TAccept, TDisposit
 ```php
 /**
  * PDF documents, "attachment" disposition (download), "documents" disk:
- * @property ?File<'application/pdf', 'attachment', 'documents'> $contract
+ * @property File<"application/pdf", "attachment", "documents"> $contract
  *
  * Multiple files (the field gets the multiple attribute):
  * @property list<File> $attachments
@@ -440,9 +440,11 @@ Pseudotype parameters are set via a generic annotation: `File<TAccept, TDisposit
 **Stored file names.** By default `hashName()` is used. The logic can be overridden globally, e.g. in a service provider's `boot()`:
 
 ```php
+use Illuminate\Http\UploadedFile;
+use TTBooking\Formster\Entities\FinalAuraProperty;
 use TTBooking\Formster\Types\File;
 
-File::generateStorableNamesUsing(function ($object, $property, $uploadedFile, $disk) {
+File::generateStorableNamesUsing(function (object $object, FinalAuraProperty $property, UploadedFile $uploadedFile, ?string $disk) {
     return 'uploads/'.$uploadedFile->getClientOriginalName();
 });
 
@@ -480,7 +482,7 @@ All components are available under the `formster::` namespace.
 <x-formster::form :object="$model" action="{{ route('users.update', $model) }}" />
 
 {{-- Table only, without the defaults column --}}
-<x-formster::form.table :object="$model" :editable="false" :show-defaults="false" />
+<x-formster::form.table :object="$model" :show-defaults="false" />
 
 {{-- A custom button instead of the default one (via a slot) --}}
 <x-formster::form :object="$model" action="{{ route('users.update', $model) }}">
@@ -522,17 +524,17 @@ Where and how the checks run:
 The policy method receives the model and the property name:
 
 ```php
-class UserPolicy
+class OrderPolicy
 {
     // $property — the property name, e.g. 'email'
-    public function view(?User $authUser, User $model, string $property): bool
+    public function view(User $user, Order $order, ?string $property = null): bool
     {
         return $property !== 'secret_field';
     }
 
-    public function update(?User $authUser, User $model, string $property): bool
+    public function update(User $user, Order $order, ?string $property = null): bool
     {
-        return $authUser?->isAdmin() ?? false;
+        return $user->isAdmin();
     }
 }
 ```
@@ -587,18 +589,18 @@ The `lang/vendor/formster/{locale}/form.php` file:
 | `open` / `download` / `uploaded` | open / download / uploaded |
 | `save`                           | Save                       |
 
-### Property and enum-value descriptions
+### Property and enum case descriptions
 
 A field description is looked up by translation keys (application strings take priority over the package ones):
 
 ```
-formster.{model|object}.{alias}.{property_in_snake_case}
+formster.{model|object}.{alias}.{property_name_in_snake_case}
 ```
 
-For enum values:
+For enum cases:
 
 ```
-formster.enum.{alias}.{case_in_snake_case}
+formster.enum.{alias}.{enum_case_in_snake_case}
 ```
 
 For example, for the `App\Models\User` model and the `firstName` property:
@@ -610,7 +612,7 @@ return [
         'user' => [
             'first_name' => 'First name',
             '_summary'     => 'User profile',       // table heading
-            '_description' => 'Basic data',          // table description
+            '_description' => 'Basic data',         // table description
         ],
     ],
 ];
@@ -627,7 +629,7 @@ An `alias` is the key under which a model/enum appears in localization strings. 
 ```php
 use TTBooking\Formster\Attributes\Alias;
 
-#[Alias('user')]
+#[Alias('person')]
 class Customer extends Model {}
 ```
 
@@ -663,8 +665,9 @@ return [
         TTBooking\Formster\Handlers\FileHandler::class,
     ],
 
-    // Policy enforcement. false — lenient mode (access when policy/method is
-    // missing), true — the regular Laravel Gate behavior.
+    // Policy enforcement:
+    // false — lenient mode (grant access when policy/method is missing),
+    // true — the regular Laravel Gate behavior.
     'enforce_policies' => (bool) env('FORMSTER_ENFORCE_POLICIES', false),
 
     // File pseudotype settings.
@@ -753,7 +756,7 @@ class MoneyHandler implements PropertyHandler
 
 `mergeValidationRules($defaults)` merges the rules declared on the property with the handler's default rules using the `'...'` notation (see [Validation](#validation)).
 
-Register the handler in `config/formster.php` (in the `property_handlers` array, before `FileHandler`/`FallbackHandler`) and create the `form.money` Blade widget.
+Register the handler in `config/formster.php` (in the `property_handlers` array, before `FallbackHandler`) and create the `form.money` Blade widget.
 
 The generator stub can be published (`vendor:publish --tag=formster-stub`) and customized — the command picks up `stubs/formster-handler.stub` from the application root.
 
