@@ -1,0 +1,27 @@
+{
+    "$schema": "https://context7.com/schema/context7.json",
+    "projectTitle": "Laravel Formster",
+    "description": "Laravel package that automatically generates HTML forms and read-only tables from any PHP object or Eloquent model, based on property types",
+    "folders": [],
+    "excludeFolders": [
+        "src",
+        "tests",
+        "vendor",
+        "workbench",
+        "stubs",
+        "resources",
+        "lang",
+        "config"
+    ],
+    "excludeFiles": [
+        "LICENSE.md",
+        "README.ru.md"
+    ],
+    "rules": [
+        "Describe model properties with PHPDoc @property annotations — the annotated type determines the form widget",
+        "Mark models with the #[Aura] attribute or define policies; otherwise the Gate denies access and the form renders empty",
+        "Render an editable form with <x-formster::form :object=\"$model\" action=\"...\"/> and a read-only table with <x-formster::form.table :object=\"$model\"/>",
+        "Handle form submissions with ActionHandler::update($request, $object)->save()",
+        "Requires PHP 8.2+ and Laravel 12.17+"
+    ]
+}
