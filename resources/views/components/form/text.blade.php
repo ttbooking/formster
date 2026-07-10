@@ -6,5 +6,10 @@
 @if (! $object || ! $editable)
     <span {{ $attributes }}>{{ prop_val($property, $object) }}</span>
 @else
-    <input {{ $attributes }} type="text" name="{{ $property->variableName }}" value="{{ $object->{$property->variableName} }}" @readonly(! $property->writable) />
+    <input {{ $attributes }}
+        type="text"
+        name="{{ $property->variableName }}"
+        value="{{ old($property->variableName, $object->{$property->variableName}) }}"
+        @readonly(! $property->writable)
+    />
 @endif

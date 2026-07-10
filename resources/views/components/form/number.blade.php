@@ -7,5 +7,10 @@
 @if (! $object || ! $editable)
     <span {{ $attributes }}>{{ number_format(prop_val($property, $object)) }}</span>
 @else
-    <input {{ $attributes }} type="number" name="{{ $property->variableName }}" value="{{ $object->{$property->variableName} }}" @readonly(! $property->writable) />
+    <input {{ $attributes }}
+        type="number"
+        name="{{ $property->variableName }}"
+        value="{{ old($property->variableName, $object->{$property->variableName}) }}"
+        @readonly(! $property->writable)
+    />
 @endif

@@ -24,11 +24,11 @@ class BooleanHandler implements PropertyHandler
 
     public function validationRules(): string|array
     {
-        return $this->property->mergeValidationRules('sometimes|in:on');
+        return $this->property->mergeValidationRules('required|boolean');
     }
 
     public function handle(object $object, Request $request): void
     {
-        $object->{$this->property->variableName} = $request->has($this->property->variableName);
+        $object->{$this->property->variableName} = $request->boolean($this->property->variableName);
     }
 }

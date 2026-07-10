@@ -15,5 +15,10 @@
         ])
     ></span>
 @else
-    <input {{ $attributes }} type="color" name="{{ $property->variableName }}" value="{{ $object->{$property->variableName} }}" @readonly(! $property->writable) />
+    <input {{ $attributes }}
+        type="color"
+        name="{{ $property->variableName }}"
+        value="{{ old($property->variableName, $object->{$property->variableName}) }}"
+        @readonly(! $property->writable)
+    />
 @endif

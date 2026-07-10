@@ -10,7 +10,7 @@
     <input {{ $attributes }}
         type="datetime-local"
         name="{{ $property->variableName }}"
-        value="{{ $object->{$property->variableName}->toDateTimeLocalString('minute') }}"
+        value="{{ old($property->variableName, $object->{$property->variableName}->toDateTimeLocalString('minute')) }}"
         @readonly(! $property->writable)
     />
 @endif

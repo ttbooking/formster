@@ -24,7 +24,7 @@ class StringHandler implements PropertyHandler
 
     public function validationRules(): string|array
     {
-        return $this->property->mergeValidationRules('required|string');
+        return $this->property->mergeValidationRules('present|nullable|string');
     }
 
     public function handle(object $object, Request $request): void

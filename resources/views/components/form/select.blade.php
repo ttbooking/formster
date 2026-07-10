@@ -10,7 +10,7 @@
 @else
     <select {{ $attributes }} name="{{ $property->variableName }}" @disabled(! $property->writable)>
         @foreach ($property->type->name::cases() as $case)
-            <option value="{{ enum_value($case) }}" @selected(enum_value($case) === enum_value($object->{$property->variableName}))>
+            <option value="{{ enum_value($case) }}" @selected(enum_value($case) === old($property->variableName, enum_value($object->{$property->variableName})))>
                 {{ enum_desc($case) }}
             </option>
         @endforeach

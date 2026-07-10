@@ -11,7 +11,12 @@
     <fieldset {{ $attributes }} @disabled(! $property->writable)>
         @foreach ($property->type->name::cases() as $case)
             <label>
-                <input type="radio" name="{{ $property->variableName }}" value="{{ enum_value($case) }}" @checked(enum_value($case) === enum_value($object->{$property->variableName})) />
+                <input
+                    type="radio"
+                    name="{{ $property->variableName }}"
+                    value="{{ enum_value($case) }}"
+                    @checked(enum_value($case) === old($property->variableName, enum_value($object->{$property->variableName})))
+                />
                 {{ enum_desc($case) }}
             </label>
         @endforeach
