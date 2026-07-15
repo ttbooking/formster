@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace TTBooking\Formster\Types;
 
+use Illuminate\Image\Image as ImageObject;
+use Illuminate\Image\ImageException;
+use Illuminate\Support\Facades\Image as IlluminateImage;
 use Intervention\Image\Decoders\BinaryImageDecoder;
 use Intervention\Image\EncodedImage;
 use Intervention\Image\Exceptions\DecoderException;
@@ -34,39 +37,63 @@ class Image extends File
         parent::__construct($name, $disk, $contentDisposition, $mediaType);
     }
 
-    public function asDataUri(): ?string
+    public function asDataUri(bool $preview = false): ?string
     {
-        if (is_null($data = $this->get())) {
-            return null;
-        }
-
-        return (string) (new EncodedImage($data, $this->mediaType()))->toDataUri();
+        return match (true) {
+            class_exists(IlluminateImage::class) => $this->illuminateDataUri($preview),
+            class_exists(InterventionImage::class) => $this->interventionDataUri($preview),
+            default => null,
+        };
     }
 
     public function preview(): ?string
     {
+        return $this->asDataUri(true);
+    }
+
+    protected function illuminateDataUri(bool $preview = false): ?string
+    {
+        try {
+            return IlluminateImage::fromStorage($this->name, $this->disk)
+                ->when(
+                    $preview && $this->requiresScaleDownForPreview(),
+                    static fn (ImageObject $image) => $image->scale(static::previewWidth(), static::previewHeight())
+                )
+                ->toDataUri();
+        } catch (ImageException) {
+            return null;
+        }
+    }
+
+    protected function interventionDataUri(bool $preview = false): ?string
+    {
         if (is_null($data = $this->get())) {
             return null;
         }
 
-        if ($this->mediaType() === 'image/svg+xml' || $this->size() <= static::previewScaleDownThreshold()) {
-            $preview = new EncodedImage($data, $this->mediaType());
-        } else {
+        if ($preview && $this->requiresScaleDownForPreview()) {
             try {
                 /** @var ImageInterface $image */
                 $image = interface_exists(AnimationFactoryInterface::class)
                     ? InterventionImage::decode($data, BinaryImageDecoder::class)
                     : InterventionImage::read($data, BinaryImageDecoder::class);
 
-                $preview = $image
+                $encoded = $image
                     ->scaleDown(static::previewWidth(), static::previewHeight())
                     ->encode();
             } catch (DecoderException) {
                 return null;
             }
+        } else {
+            $encoded = new EncodedImage($data, $this->mediaType());
         }
 
-        return (string) $preview->toDataUri();
+        return (string) $encoded->toDataUri();
+    }
+
+    protected function requiresScaleDownForPreview(): bool
+    {
+        return $this->mediaType() !== 'image/svg+xml' && $this->size() > static::previewScaleDownThreshold();
     }
 
     /**
@@ -85,21 +112,30 @@ class Image extends File
         return 'inline';
     }
 
+    /**
+     * @return positive-int
+     */
     public static function previewWidth(): int
     {
-        /** @var int */
+        /** @var positive-int */
         return config('formster.preview.width', 100);
     }
 
+    /**
+     * @return positive-int
+     */
     public static function previewHeight(): int
     {
-        /** @var int */
+        /** @var positive-int */
         return config('formster.preview.height', 100);
     }
 
+    /**
+     * @return positive-int
+     */
     public static function previewScaleDownThreshold(): int
     {
-        /** @var int */
+        /** @var positive-int */
         return config('formster.preview.scale_down_threshold', 10_240);
     }
 }

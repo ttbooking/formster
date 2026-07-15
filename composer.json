@@ -16,11 +16,11 @@
     ],
     "require": {
         "php": "^8.2",
-        "intervention/image-laravel": "^1.5 || ^4.0",
         "laravel/framework": "^12.17 || ^13.0"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
+        "intervention/image-laravel": "^1.5 || ^4.0",
         "larastan/larastan": "^3.8.1",
         "laravel/pint": "^1.16.1",
         "mockery/mockery": "^1.6",
@@ -31,6 +31,9 @@
     "conflict": {
         "phpdocumentor/reflection-docblock": ">=6",
         "phpdocumentor/type-resolver": ">=2"
+    },
+    "suggest": {
+        "intervention/image-laravel": "Required to enable support for the Image pseudotype on Laravel <13.20 (^1.5 || ^4.0)."
     },
     "autoload": {
         "psr-4": {

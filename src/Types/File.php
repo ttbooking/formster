@@ -109,9 +109,12 @@ class File implements Castable, Comparable, JsonSerializable, Stringable
         return config('formster.file.static_disk');
     }
 
+    /**
+     * @return 'attachment'|'inline'
+     */
     public static function contentDisposition(): string
     {
-        /** @var string */
+        /** @var 'attachment'|'inline' */
         return config('formster.file.content_disposition', 'attachment');
     }
 
