@@ -35,7 +35,7 @@
     "view": {
         "paths": [
             {
-                "path": "/resources/views",
+                "path": "resources/views",
                 "namespace": "formster"
             }
         ]
@@ -44,7 +44,7 @@
         "components": {
             "viewPaths": [
                 {
-                    "path": "/resources/views/components",
+                    "path": "resources/views/components",
                     "namespace": "formster"
                 }
             ],
