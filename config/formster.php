@@ -35,6 +35,7 @@ return [
         TTBooking\Formster\Handlers\EnumHandler::class,
         TTBooking\Formster\Handlers\DateTimeHandler::class,
         TTBooking\Formster\Handlers\DateTimeZoneHandler::class,
+        TTBooking\Formster\Handlers\RelatedModelHandler::class,
         TTBooking\Formster\Handlers\ColorHandler::class,
         TTBooking\Formster\Handlers\ImageHandler::class,
         TTBooking\Formster\Handlers\FileHandler::class,

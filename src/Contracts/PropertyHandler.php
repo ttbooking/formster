@@ -9,6 +9,8 @@ use TTBooking\Formster\Concerns\MergesValidationRules;
 use TTBooking\Formster\Entities\FinalAuraProperty;
 
 /**
+ * @template T of object = object
+ *
  * @phpstan-import-type RuleList from MergesValidationRules
  */
 interface PropertyHandler
@@ -22,5 +24,8 @@ interface PropertyHandler
      */
     public function validationRules(): string|array;
 
+    /**
+     * @param  T  $object
+     */
     public function handle(object $object, Request $request): void;
 }

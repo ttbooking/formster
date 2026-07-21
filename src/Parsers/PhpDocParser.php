@@ -121,9 +121,11 @@ class PhpDocParser implements HigherOrderAware, PropertyParser
     protected function fetchDefaultPropertyValue(object $object, string $property): array
     {
         try {
-            return $object instanceof Model
-                ? [$object->hasAttribute($property), $object->getAttributeValue($property)]
-                : [isset($object->$property), $object->$property];
+            return $object instanceof Model ? match (true) {
+                $object->hasAttribute($property) => [true, $object->getAttributeValue($property)],
+                $object->isRelation($property) || $object->relationLoaded($property) => [true, $object->getRelationValue($property)],
+                default => [false, null],
+            } : [isset($object->$property), $object->$property];
         } catch (Throwable) {
             return [false, null];
         }
