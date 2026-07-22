@@ -148,8 +148,10 @@ class PhpStanParser implements HigherOrderAware, PropertyParser
 
     protected function parseNested(string $class): ?Aura
     {
-        return (class_exists($class) || interface_exists($class)) && ! enum_exists($class)
-            ? $this->proxy->parse($class) : null;
+        return null;
+
+        /*return (class_exists($class) || interface_exists($class)) && ! enum_exists($class)
+            ? $this->proxy->parse($class) : null;*/
     }
 
     /**
