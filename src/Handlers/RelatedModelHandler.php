@@ -14,7 +14,9 @@ use TTBooking\Formster\Entities\FinalAuraProperty;
 use UnexpectedValueException;
 
 /**
- * @implements PropertyHandler<Model>
+ * @template T of Model = Model
+ *
+ * @implements PropertyHandler<T>
  */
 class RelatedModelHandler implements PropertyHandler
 {
@@ -34,7 +36,7 @@ class RelatedModelHandler implements PropertyHandler
 
     public function validationRules(): string|array
     {
-        /** @var class-string<Model> $modelClass */
+        /** @var class-string<T> $modelClass */
         $modelClass = $this->namedType()->name;
 
         return $this->property->mergeValidationRules([
@@ -51,7 +53,7 @@ class RelatedModelHandler implements PropertyHandler
             default => throw new UnexpectedValueException('Unsupported key type.'),
         };
 
-        /** @var BelongsTo<Model, Model> $relationship */
+        /** @var BelongsTo<Model, T> $relationship */
         $relationship = $object->{$this->property->variableName}();
 
         $relationship->associate($newKey);
