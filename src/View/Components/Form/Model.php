@@ -19,6 +19,9 @@ class Model extends Component
 
     public string $titleColumn;
 
+    /** @var list<mixed> */
+    public array $remainingParameters;
+
     /** @var Collection<array-key, mixed> */
     public Collection $options;
 
@@ -32,6 +35,8 @@ class Model extends Component
         $this->titleColumn = $this->namedType()->atomicParameters()->get(0)?->asConstExpr() ?? 'name'; // @phpstan-ignore assign.propertyType
         $scopeName = $this->namedType()->atomicParameters()->get(1)?->asConstExpr() ?? null;
         $scopeParameters = Arr::wrap($this->namedType()->atomicParameters()->get(2)?->asConstExpr() ?? []);
+        $this->remainingParameters = $this->namedType()->atomicParameters()->slice(3)->values() // @phpstan-ignore assign.propertyType
+            ->map->asConstExpr()->all();
 
         $this->options = $modelClass::query()
             ->when($scopeName, static function ($model) use ($scopeName, $scopeParameters) {
