@@ -14,6 +14,10 @@ readonly class FinalAuraProperty
 {
     use MergesValidationRules;
 
+    /**
+     * @param  string|RuleList|Closure(): (string|RuleList)  $validationRules
+     * @param  array<string, mixed>  $meta
+     */
     final public function __construct(
         public bool $readable,
         public bool $writable,
@@ -22,8 +26,8 @@ readonly class FinalAuraProperty
         public string $description,
         public bool $hasDefaultValue = false,
         public mixed $defaultValue = null,
-        /** @var string|RuleList|Closure(): (string|RuleList) */
         public string|array|Closure $validationRules = [],
+        public array $meta = [],
         public string $viewPolicy = 'view',
         public string $updatePolicy = 'update',
     ) {}

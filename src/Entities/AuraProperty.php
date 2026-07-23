@@ -20,6 +20,10 @@ class AuraProperty implements Stringable
 {
     use Conditionable, MergesValidationRules;
 
+    /**
+     * @param  string|RuleList|Closure(): (string|RuleList)  $validationRules
+     * @param  array<string, mixed>  $meta
+     */
     final public function __construct(
         public readonly ?bool $readable = true,
         public readonly ?bool $writable = true,
@@ -28,8 +32,8 @@ class AuraProperty implements Stringable
         public readonly ?string $description = null,
         public readonly ?bool $hasDefaultValue = false,
         public readonly mixed $defaultValue = null,
-        /** @var string|RuleList|Closure(): (string|RuleList) */
         public string|array|Closure $validationRules = [],
+        public array $meta = [],
         public readonly ?string $viewPolicy = 'view',
         public readonly ?string $updatePolicy = 'update',
     ) {}
@@ -48,6 +52,7 @@ class AuraProperty implements Stringable
             hasDefaultValue: $this->hasDefaultValue,
             defaultValue: $this->defaultValue,
             validationRules: $this->validationRules,
+            meta: $this->meta,
             viewPolicy: $this->viewPolicy,
             updatePolicy: $this->updatePolicy,
         );
@@ -64,6 +69,7 @@ class AuraProperty implements Stringable
             hasDefaultValue: $property->hasDefaultValue ?? $this->hasDefaultValue,
             defaultValue: $property->defaultValue ?? $this->defaultValue,
             validationRules: $property->mergeValidationRules($this->validationRules),
+            meta: $property->meta + $this->meta,
             viewPolicy: $property->viewPolicy ?? $this->viewPolicy,
             updatePolicy: $property->updatePolicy ?? $this->updatePolicy,
         );

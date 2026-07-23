@@ -20,6 +20,7 @@ readonly class Aura
 
     /**
      * @param  iterable<array-key, AuraProperty>  $properties
+     * @param  array<string, mixed>  $meta
      * @param  list<string>|null  $include
      * @param  list<string>  $exclude
      */
@@ -27,6 +28,7 @@ readonly class Aura
         public string $summary = '',
         public string $description = '',
         iterable $properties = [],
+        public array $meta = [],
         public string $viewPolicy = 'view',
         public string $updatePolicy = 'update',
         protected ?array $include = null,
@@ -57,6 +59,7 @@ readonly class Aura
             summary: $this->summary,
             description: $this->description,
             properties: $this->properties->only($this->include)->except($this->exclude)->map->finalize(),
+            meta: $this->meta,
             viewPolicy: $this->viewPolicy,
             updatePolicy: $this->updatePolicy,
         );
@@ -73,6 +76,7 @@ readonly class Aura
                     : $value
                 )
                 ->union($aura->properties),
+            meta: $aura->meta + $this->meta,
             viewPolicy: $aura->viewPolicy !== 'view' ? $aura->viewPolicy : $this->viewPolicy,
             updatePolicy: $aura->updatePolicy !== 'update' ? $aura->updatePolicy : $this->updatePolicy,
             include: isset($this->include, $aura->include)
