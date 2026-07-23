@@ -9,6 +9,11 @@ parameters:
         - src
         - tests
 
+    bootstrapFiles:
+        - stubs/Image.php
+        - stubs/ImageException.php
+        - stubs/ImageFacade.php
+
     stubFiles:
         - stubs/AfterEachCall.stub
         - stubs/BeforeEachCall.stub
