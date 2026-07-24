@@ -10,7 +10,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
 use phpDocumentor\Reflection\TypeResolver;
 use phpDocumentor\Reflection\Types\ContextFactory;
+use PHPStan\PhpDocParser\Ast\PhpDoc\GenericTagValueNode;
 use PHPStan\PhpDocParser\Ast\PhpDoc\PhpDocChildNode;
+use PHPStan\PhpDocParser\Ast\PhpDoc\PhpDocNode;
+use PHPStan\PhpDocParser\Ast\PhpDoc\PhpDocTagNode;
+use PHPStan\PhpDocParser\Ast\PhpDoc\PhpDocTagValueNode;
 use PHPStan\PhpDocParser\Ast\PhpDoc\PhpDocTextNode;
 use PHPStan\PhpDocParser\Ast\Type\ConstTypeNode;
 use PHPStan\PhpDocParser\Ast\Type\GenericTypeNode;
@@ -98,10 +102,22 @@ class PhpStanParser implements HigherOrderAware, PropertyParser
         $comment = (string) Arr::first($phpDocNode->children, static fn (PhpDocChildNode $child) => $child instanceof PhpDocTextNode);
         [$summary, $description] = (preg_split('~\R\R~u', $comment, 2, PREG_SPLIT_NO_EMPTY) ?: []) + ['', ''];
 
+        /** @var array<string, string> $meta */
+        $meta = Arr::mapWithKeys(
+            $this->getMetaTagValues($phpDocNode),
+            static fn (GenericTagValueNode $node, string $tag) => [substr($tag, 15) => $node->value]
+        );
+
+        $viewPolicy = $this->getGenericTagValues($phpDocNode, '@formster-view-policy')[0]->value ?? 'view';
+        $updatePolicy = $this->getGenericTagValues($phpDocNode, '@formster-update-policy')[0]->value ?? 'update';
+
         return new Aura(
             summary: $summary,
             description: $description,
             properties: $props,
+            meta: $meta,
+            viewPolicy: $viewPolicy,
+            updatePolicy: $updatePolicy,
         );
     }
 
@@ -168,5 +184,35 @@ class PhpStanParser implements HigherOrderAware, PropertyParser
         } catch (Throwable) {
             return [false, null];
         }
+    }
+
+    /**
+     * @return GenericTagValueNode[]
+     */
+    protected function getGenericTagValues(PhpDocNode $node, string $tagName): array
+    {
+        return array_filter(
+            array_column($node->getTagsByName($tagName), 'value'),
+            static fn (PhpDocTagValueNode $value) => $value instanceof GenericTagValueNode,
+        );
+    }
+
+    /**
+     * @return array<string, GenericTagValueNode>
+     */
+    protected function getMetaTagValues(PhpDocNode $node): array
+    {
+        return array_filter(
+            array_column($this->getMetaTags($node), 'value', 'name'),
+            static fn (PhpDocTagValueNode $value) => $value instanceof GenericTagValueNode,
+        );
+    }
+
+    /**
+     * @return PhpDocTagNode[]
+     */
+    protected function getMetaTags(PhpDocNode $node): array
+    {
+        return array_filter($node->getTags(), static fn (PhpDocTagNode $tag) => str_starts_with($tag->name, '@formster-meta-'));
     }
 }
