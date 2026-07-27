@@ -30,7 +30,11 @@ class ActionHandler implements Contracts\ActionHandler
         $rules = $attributes = [];
         foreach ($properties as $property) {
             $rules[$property->variableName] = $this->handler->for($property)->validationRules();
-            $attributes[$property->variableName] = prop_desc($object, $property->variableName, $property->description);
+            $attributes[$property->variableName] =
+                (string) str(prop_desc($object, $property->variableName, $property->description))
+                    ->inlineMarkdown()
+                    ->stripTags()
+                    ->squish();
         }
 
         $request->validate($rules, [], $attributes);
