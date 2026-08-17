@@ -36,7 +36,7 @@ class FileHandler implements PropertyHandler
 
     public function validationRules(): string|array
     {
-        return $this->property->mergeValidationRules('required|file');
+        return $this->property->mergeValidationRules('file');
     }
 
     public function handle(object $object, Request $request): void
