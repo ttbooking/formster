@@ -16,7 +16,7 @@
                     {{ $attributes->merge(['name' => $property->variableName])->only('name') }}
                     type="radio"
                     value="{{ enum_value($case) }}"
-                    @checked(enum_value($case) == ($value ?? old($attributes->get('name'), enum_value($object->{$property->variableName}))))
+                    @checked(enum_value($case) == ($value ?? old($attributes->get('name', $property->variableName), enum_value($object->{$property->variableName}))))
                 />
                 {{ enum_desc($case) }}
             </label>

@@ -10,7 +10,7 @@
     <input
         {{ $attributes->merge([
             'name' => $property->variableName,
-            'value' => old($attributes->get('name'), $object->{$property->variableName}),
+            'value' => old($attributes->get('name', $property->variableName), $object->{$property->variableName}),
         ]) }}
         type="text"
         @readonly(! $property->writable)

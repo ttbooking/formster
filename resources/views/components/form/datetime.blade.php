@@ -11,7 +11,7 @@
     <input
         {{ $attributes->merge([
             'name' => $property->variableName,
-            'value' => old($attributes->get('name'), $object->{$property->variableName}?->toDateTimeLocalString('minute')),
+            'value' => old($attributes->get('name', $property->variableName), $object->{$property->variableName}?->toDateTimeLocalString('minute')),
         ]) }}
         type="datetime-local"
         @readonly(! $property->writable)

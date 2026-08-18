@@ -13,7 +13,7 @@
             {{ $attributes->merge(['name' => $property->variableName])->only(['id', 'name']) }}
             type="checkbox"
             value="1"
-            @checked($value ?? old($attributes->get('name'), $object->{$property->variableName}))
+            @checked($value ?? old($attributes->get('name', $property->variableName), $object->{$property->variableName}))
             @disabled(! $property->writable)
         />
     </span>
