@@ -7,9 +7,11 @@ namespace TTBooking\Formster\View\Components\Form;
 use Closure;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model as EloquentModel;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\View\Component;
+use InvalidArgumentException;
 use TTBooking\Formster\Concerns\AssertsPropertyTypes;
 use TTBooking\Formster\Entities\FinalAuraProperty;
 
@@ -25,12 +27,14 @@ class Model extends Component
     /** @var Collection<array-key, mixed> */
     public Collection $options;
 
+    public int|string|null $value;
+
     /**
      * Create a new component instance.
      */
-    public function __construct(public FinalAuraProperty $property)
+    public function __construct(public FinalAuraProperty $property, EloquentModel|int|string|null $value = null)
     {
-        /** @var class-string<\Illuminate\Database\Eloquent\Model> $modelClass */
+        /** @var class-string<EloquentModel> $modelClass */
         $modelClass = $this->namedType()->name;
         $this->titleColumn = $this->namedType()->atomicParameters()->get(0)?->asConstExpr() ?? 'name'; // @phpstan-ignore assign.propertyType
         $scopeName = $this->namedType()->atomicParameters()->get(1)?->asConstExpr() ?? null;
@@ -40,10 +44,18 @@ class Model extends Component
 
         $this->options = $modelClass::query()
             ->when($scopeName, static function ($model) use ($scopeName, $scopeParameters) {
-                /** @var Builder<\Illuminate\Database\Eloquent\Model> */
+                /** @var Builder<EloquentModel> */
                 return $model->$scopeName(...$scopeParameters);
             })
             ->pluck($this->titleColumn, (new $modelClass)->getKeyName());
+
+        if ($value instanceof EloquentModel && ! $value instanceof $modelClass) {
+            throw new InvalidArgumentException(
+                sprintf('Value should be an instance of the [%s] model, instance of [%s] given.', $modelClass, get_class($value))
+            );
+        }
+
+        $this->value = $value instanceof EloquentModel ? $value->getKey() : $value; // @phpstan-ignore assign.propertyType
     }
 
     /**

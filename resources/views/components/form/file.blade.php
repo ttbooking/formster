@@ -34,9 +34,9 @@
 @endif
 
 @if ($object && $editable)
-    <input {{ $attributes }}
+    <input
+        {{ $attributes->merge(['name' => $property->variableName]) }}
         type="file"
-        name="{{ $property->variableName }}"
         @if ($property->type->atomicParameters()->has(0))
         accept="{{ $property->type->atomicParameters()->get(0)->asConstExpr() }}"
         @endif

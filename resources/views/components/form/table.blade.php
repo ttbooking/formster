@@ -18,7 +18,7 @@
     </thead>
     <tbody>
         @foreach ($aura->properties as $property)
-            @can (array_unique([$aura->viewPolicy, $property->viewPolicy]), [$object, $property->variableName])
+            @can(array_unique([$aura->viewPolicy, $property->viewPolicy]), [$object, $property->variableName])
                 <x-formster::form.row :$property />
             @endcan
         @endforeach

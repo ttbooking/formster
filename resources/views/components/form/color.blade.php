@@ -1,3 +1,4 @@
+@use(function TTBooking\Formster\Support\old)
 @use(function TTBooking\Formster\Support\prop_val)
 
 @aware(['object', 'editable'])
@@ -15,10 +16,12 @@
         ])
     ></span>
 @else
-    <input {{ $attributes }}
+    <input
+        {{ $attributes->merge([
+            'name' => $property->variableName,
+            'value' => old($attributes->get('name'), $object->{$property->variableName}),
+        ]) }}
         type="color"
-        name="{{ $property->variableName }}"
-        value="{{ old($property->variableName, $object->{$property->variableName}) }}"
         @readonly(! $property->writable)
     />
 @endif

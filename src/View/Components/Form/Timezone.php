@@ -23,7 +23,7 @@ class Timezone extends Component
     /**
      * Create a new component instance.
      */
-    public function __construct(public FinalAuraProperty $property)
+    public function __construct(public FinalAuraProperty $property, public ?string $value = null)
     {
         $timezoneGroup = $this->namedType()->atomicParameters()->get(0)?->asConstExpr() ?? DateTimeZone::ALL;
         $groupByRegion = $this->namedType()->atomicParameters()->get(1)?->asConstExpr() ?? $timezoneGroup === DateTimeZone::ALL;

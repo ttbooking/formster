@@ -59,6 +59,19 @@ function prop_val(FinalAuraProperty $property, ?object $object = null): mixed
     return isset($object) ? $object->{$property->variableName} : $property->defaultValue;
 }
 
+/**
+ * @param  Model|string|array<mixed>|null  $default
+ * @return string|array<mixed>|null
+ */
+function old(?string $key = null, Model|string|array|null $default = null): string|array|null
+{
+    if (isset($key)) {
+        $key = strtr($key, ['[' => '.', ']' => '']);
+    }
+
+    return \old($key, $default);
+}
+
 function number_format(int|float $number, ?int $precision = null): string
 {
     if (extension_loaded('intl') && false !== $result = Number::format($number, $precision)) {

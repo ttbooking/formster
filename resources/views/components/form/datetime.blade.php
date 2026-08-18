@@ -1,3 +1,4 @@
+@use(function TTBooking\Formster\Support\old)
 @use(function TTBooking\Formster\Support\prop_val)
 
 @aware(['object', 'editable'])
@@ -7,10 +8,12 @@
     @php($datetime = prop_val($property, $object))
     <time {{ $attributes }} datetime="{{ $datetime->toDateTimeLocalString('minute') }}">{{ $datetime->isoFormat('L LT') }}</time>
 @else
-    <input {{ $attributes }}
+    <input
+        {{ $attributes->merge([
+            'name' => $property->variableName,
+            'value' => old($attributes->get('name'), $object->{$property->variableName}?->toDateTimeLocalString('minute')),
+        ]) }}
         type="datetime-local"
-        name="{{ $property->variableName }}"
-        value="{{ old($property->variableName, $object->{$property->variableName}->toDateTimeLocalString('minute')) }}"
         @readonly(! $property->writable)
     />
 @endif
