@@ -79,7 +79,9 @@ class PhpStanParser implements HigherOrderAware, PropertyParser
 
         $context = (new ContextFactory)->createFromReflector($refClass);
         $typeResolver = new TypeResolver;
-        $resolver = static fn (string $type) => ltrim((string) $typeResolver->resolve($type, $context), '\\');
+        $resolver = static fn (string $type) => rescue(
+            static fn () => ltrim((string) $typeResolver->resolve($type, $context), '\\'), $type, false
+        );
 
         $props = [];
         foreach (['@property', '@property-read', '@property-write'] as $tag) {
