@@ -54,8 +54,8 @@ class IntegerHandler implements PropertyHandler
             'non-positive-int' => [null, 0],
             'non-negative-int' => [0, null],
             default => [
-                rescue(fn () => $this->namedType()->atomicParameters()->get(0)?->asConstExpr(), report: false),
-                rescue(fn () => $this->namedType()->atomicParameters()->get(1)?->asConstExpr(), report: false),
+                $this->namedType()->atomicParameters()->get(0)?->asConstExpr(),
+                $this->namedType()->atomicParameters()->get(1)?->asConstExpr(),
             ],
         };
     }

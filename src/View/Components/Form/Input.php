@@ -7,12 +7,18 @@ namespace TTBooking\Formster\View\Components\Form;
 use Closure;
 use Illuminate\Contracts\View\View;
 use Illuminate\View\Component;
+use TTBooking\Formster\Concerns\AssertsPropertyTypes;
 use TTBooking\Formster\Entities\FinalAuraProperty;
 use TTBooking\Formster\Facades\PropertyHandler;
 
 class Input extends Component
 {
+    use AssertsPropertyTypes;
+
     public string $component;
+
+    /** @var list<mixed> */
+    public array $typeParameters;
 
     /**
      * Create a new component instance.
@@ -20,6 +26,9 @@ class Input extends Component
     public function __construct(public FinalAuraProperty $property, public ?object $object = null)
     {
         $this->component = PropertyHandler::for($property)->component();
+
+        $this->typeParameters = $this->namedType()->atomicParameters()->values() // @phpstan-ignore assign.propertyType
+            ->map->asConstExpr()->all();
     }
 
     /**

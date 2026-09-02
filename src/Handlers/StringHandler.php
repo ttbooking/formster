@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace TTBooking\Formster\Handlers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Stringable;
 use TTBooking\Formster\Contracts\PropertyHandler;
 use TTBooking\Formster\Entities\FinalAuraProperty;
 
@@ -14,7 +15,9 @@ class StringHandler implements PropertyHandler
 
     public static function satisfies(FinalAuraProperty $property): bool
     {
-        return collect(['string', 'non-empty-string', 'class-string'])->contains($property->type->contains(...));
+        return collect([
+            'string', 'non-empty-string', 'class-string', Stringable::class,
+        ])->contains($property->type->contains(...));
     }
 
     public function component(): string

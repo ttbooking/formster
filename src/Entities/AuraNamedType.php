@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace TTBooking\Formster\Entities;
 
+use Error;
 use Illuminate\Support\Collection;
 
 readonly class AuraNamedType extends AuraType
@@ -43,7 +44,11 @@ readonly class AuraNamedType extends AuraType
 
     public function asConstExpr(): mixed
     {
-        return eval('return '.$this->name.';');
+        try {
+            return eval('return '.$this->name.';');
+        } catch (Error) {
+            return null;
+        }
     }
 
     public function __toString(): string
