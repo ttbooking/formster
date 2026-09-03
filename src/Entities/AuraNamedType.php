@@ -54,7 +54,7 @@ readonly class AuraNamedType extends AuraType
     public function __toString(): string
     {
         return $this->parameters->isNotEmpty()
-            ? sprintf('%s<%s>', $this->name, $this->parameters->implode(', '))
+            ? sprintf('%s<%s>', $this->name, $this->parameters->map('strval')->implode(', '))
             : $this->name;
     }
 }
