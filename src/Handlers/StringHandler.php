@@ -16,7 +16,7 @@ class StringHandler implements PropertyHandler
     public static function satisfies(FinalAuraProperty $property): bool
     {
         return collect([
-            'string', 'non-empty-string', 'class-string', Stringable::class,
+            'string', 'non-empty-string', 'class-string', 'list<string>', Stringable::class,
         ])->contains($property->type->contains(...));
     }
 
@@ -32,6 +32,10 @@ class StringHandler implements PropertyHandler
 
     public function handle(object $object, Request $request): void
     {
-        $object->{$this->property->variableName} = (string) $request->string($this->property->variableName);
+        $str = $request->string($this->property->variableName);
+
+        $object->{$this->property->variableName} = $this->property->type->contains('list<string>')
+            ? $str->isEmpty() ? [] : $str->split('/\R/')->all()
+            : (string) $str;
     }
 }

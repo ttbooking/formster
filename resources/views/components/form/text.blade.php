@@ -5,12 +5,12 @@
 @props(['property'])
 
 @if (! $object || ! $editable)
-    @if ($typeParameters[0] ?? false)
-        <span {{ $attributes }}><pre @style('white-space: pre-wrap')>{{ prop_val($property, $object) }}</pre></span>
+    @if ($property->type->contains('list<string>') || ($typeParameters[0] ?? false))
+        <span {{ $attributes }}><pre @style('white-space: pre-wrap')>{{ implode("\n", (array) prop_val($property, $object)) }}</pre></span>
     @else
         <span {{ $attributes }} @style('word-wrap: break-word')>{{ prop_val($property, $object) }}</span>
     @endif
-@elseif ($multiline = $typeParameters[0] ?? false)
+@elseif ($multiline = $property->type->contains('list<string>') || ($typeParameters[0] ?? false))
     <textarea
         {{ $attributes->except('value')->merge(['name' => $property->variableName]) }}
         @style([
@@ -26,7 +26,7 @@
         rows="{{ $multiline }}"
         @endif
     >{{
-        $attributes->get('value') ?? old($attributes->get('name', $property->variableName), $object->{$property->variableName})
+        $attributes->get('value') ?? old($attributes->get('name', $property->variableName), implode("\n", (array) $object->{$property->variableName}))
     }}</textarea>
 @else
     <input
