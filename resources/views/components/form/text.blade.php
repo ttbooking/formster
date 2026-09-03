@@ -6,9 +6,9 @@
 
 @if (! $object || ! $editable)
     @if ($typeParameters[0] ?? false)
-        <span {{ $attributes }}><pre>{{ prop_val($property, $object) }}</pre></span>
+        <span {{ $attributes }}><pre @style('white-space: pre-wrap')>{{ prop_val($property, $object) }}</pre></span>
     @else
-        <span {{ $attributes }}>{{ prop_val($property, $object) }}</span>
+        <span {{ $attributes }} @style('word-wrap: break-word')>{{ prop_val($property, $object) }}</span>
     @endif
 @elseif ($multiline = $typeParameters[0] ?? false)
     <textarea
@@ -18,9 +18,9 @@
             'box-sizing: border-box' => $multiline === true,
             'width: 100%' => $multiline === true,
             'max-width: 100%' => $multiline === true,
-            'min-height: 1lh' => $multiline === true,
             'resize: none' => $multiline === true,
             'resize: vertical' => is_int($multiline),
+            'min-height: calc(1lh + 2px)' => is_int($multiline),
         ])
         @if (is_int($multiline))
         rows="{{ $multiline }}"
