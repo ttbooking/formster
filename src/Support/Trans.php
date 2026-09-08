@@ -7,6 +7,7 @@ namespace TTBooking\Formster\Support;
 use ArrayAccess;
 use BadMethodCallException;
 use Closure;
+use Countable;
 use Generator;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Support\Arr;
@@ -19,47 +20,52 @@ use Stringable;
  * @implements ArrayAccess<string, string>
  * @implements IteratorAggregate<string, string>
  */
-final readonly class Trans implements Arrayable, ArrayAccess, IteratorAggregate, Stringable
+final readonly class Trans implements Arrayable, ArrayAccess, Countable, IteratorAggregate, Stringable
 {
     /** @var array<string, string> */
-    private array $trans;
+    private array $messages;
 
     /**
      * @param  array<string, (Closure(string): string)|scalar|null>  $replace
      */
     public function __construct(string $key, array $replace = [], ?bool $prefix = null)
     {
-        /** @var array<string, string> $trans */
-        $trans = is_string($trans = trans($key, $replace))
+        /** @var array<string, string> $messages */
+        $messages = is_string($trans = trans($key, $replace))
             ? [$prefix !== false ? $key : Str::afterLast($key, '.') => $trans]
             : Arr::dot($trans, $prefix ? $key.'.' : '');
 
-        $this->trans = $trans;
+        $this->messages = $messages;
     }
 
     public function __toString(): string
     {
-        return implode("\n", $this->trans);
+        return implode("\n", $this->messages);
     }
 
     public function toArray(): array
     {
-        return $this->trans;
+        return $this->messages;
     }
 
     public function getIterator(): Generator
     {
-        yield from $this->trans;
+        yield from $this->messages;
+    }
+
+    public function count(): int
+    {
+        return count($this->messages);
     }
 
     public function offsetExists(mixed $offset): bool
     {
-        return isset($this->trans[$offset]);
+        return isset($this->messages[$offset]);
     }
 
     public function offsetGet(mixed $offset): string
     {
-        return $this->trans[$offset];
+        return $this->messages[$offset];
     }
 
     public function offsetSet(mixed $offset, mixed $value): void
