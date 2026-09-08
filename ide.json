@@ -1,5 +1,16 @@
 {
     "$schema": "https://laravel-ide.com/schema/laravel-ide-v2.json",
+    "completions": [
+        {
+            "complete": "translationKey",
+            "condition": [
+                {
+                    "newClassFqn": ["\\TTBooking\\Formster\\Support\\Trans"],
+                    "parameters": [1]
+                }
+            ]
+        }
+    ],
     "codeGenerations": [
         {
             "id": "ttbooking/formster:handler",
