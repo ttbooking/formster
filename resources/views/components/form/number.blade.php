@@ -18,6 +18,16 @@
         @php([$min, $max] = (new IntegerHandler($property))->getBounds())
         @isset($min)min="{{ $min }}"@endisset
         @isset($max)max="{{ $max }}"@endisset
+        @if (isset($property->meta['presets']) && count($property->meta['presets']))
+        list="{{ $attributes->get('id').'_presets' }}"
+        @endif
         @readonly(! $property->writable)
     />
+    @if (isset($property->meta['presets']) && count($property->meta['presets']))
+        <datalist id="{{ $attributes->get('id').'_presets' }}">
+            @foreach ($property->meta['presets'] as $preset)
+                <option value="{{ $preset }}"></option>
+            @endforeach
+        </datalist>
+    @endif
 @endif

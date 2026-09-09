@@ -15,6 +15,16 @@
         ]) }}
         type="number"
         step="0.01"
+        @if (isset($property->meta['presets']) && count($property->meta['presets']))
+        list="{{ $attributes->get('id').'_presets' }}"
+        @endif
         @readonly(! $property->writable)
     />
+    @if (isset($property->meta['presets']) && count($property->meta['presets']))
+        <datalist id="{{ $attributes->get('id').'_presets' }}">
+            @foreach ($property->meta['presets'] as $preset)
+                <option value="{{ $preset }}"></option>
+            @endforeach
+        </datalist>
+    @endif
 @endif
