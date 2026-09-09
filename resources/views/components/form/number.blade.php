@@ -6,6 +6,10 @@
 @aware(['object', 'editable'])
 @props(['property'])
 
+@php
+    /** @var TTBooking\Formster\Entities\FinalAuraProperty $property */
+@endphp
+
 @if (! $object || ! $editable)
     <span {{ $attributes }}>{{ number_format(prop_val($property, $object)) }}</span>
 @else

@@ -4,6 +4,10 @@
 @aware(['object', 'action', 'editable'])
 @props(['property'])
 
+@php
+    /** @var TTBooking\Formster\Entities\FinalAuraProperty $property */
+@endphp
+
 @php($file = prop_val($property, $object))
 
 @if ($file)

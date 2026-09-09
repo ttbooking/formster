@@ -4,6 +4,10 @@
 @aware(['object', 'editable', 'typeParameters'])
 @props(['property'])
 
+@php
+    /** @var TTBooking\Formster\Entities\FinalAuraProperty $property */
+@endphp
+
 @if (! $object || ! $editable)
     @if ($property->type->contains('list<string>') || ($typeParameters[0] ?? false))
         <span {{ $attributes }}><pre @style('white-space: pre-wrap')>{{ implode("\n", (array) prop_val($property, $object)) }}</pre></span>

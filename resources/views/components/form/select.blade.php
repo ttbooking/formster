@@ -6,6 +6,10 @@
 @aware(['object', 'editable'])
 @props(['property', 'value' => null])
 
+@php
+    /** @var TTBooking\Formster\Entities\FinalAuraProperty $property */
+@endphp
+
 @if (! $object || ! $editable)
     <span {{ $attributes }}>{{ enum_desc(prop_val($property, $object)) }}</span>
 @else

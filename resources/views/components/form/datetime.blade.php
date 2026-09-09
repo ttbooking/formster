@@ -4,6 +4,10 @@
 @aware(['object', 'editable'])
 @props(['property'])
 
+@php
+    /** @var TTBooking\Formster\Entities\FinalAuraProperty $property */
+@endphp
+
 @if (! $object || ! $editable)
     @php($datetime = prop_val($property, $object))
     <time {{ $attributes }} datetime="{{ $datetime->toDateTimeLocalString('minute') }}">{{ $datetime->isoFormat('L LT') }}</time>
