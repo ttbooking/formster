@@ -1,3 +1,3 @@
 @props(['property'])
 
-<i {{ $attributes }}>Property type unsupported.</i>
+<i {{ $attributes }}>{{ __('formster::form.unsupported') }}</i>
