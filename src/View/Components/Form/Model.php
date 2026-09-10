@@ -49,7 +49,7 @@ class Model extends Component
             })
             ->pluck($this->titleColumn, (new $modelClass)->getKeyName())
             ->when($this->property->type->nullable, static function (Collection $options) {
-                $options->prepend(trans('formster::form.null'), '');
+                $options->prepend('-- '.trans('formster::form.null').' --', '');
             });
 
         if ($value instanceof EloquentModel && ! $value instanceof $modelClass) {
