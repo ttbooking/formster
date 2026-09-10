@@ -25,7 +25,9 @@ class DateTimeHandler implements PropertyHandler
 
     public function validationRules(): string|array
     {
-        return $this->property->mergeValidationRules('required|date');
+        return $this->property->mergeValidationRules(
+            $this->property->type->nullable ? 'present|nullable|date' : 'required|date'
+        );
     }
 
     public function handle(object $object, Request $request): void

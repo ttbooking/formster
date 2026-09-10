@@ -6,7 +6,7 @@ return [
     'default' => 'Default',
     'unsupported' => 'Property type unsupported.',
     'na' => 'N/A',
-    'null' => 'NULL',
+    'null' => 'not specified',
     'on' => '✔️',
     'off' => '❌',
     'open' => 'open',

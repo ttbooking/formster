@@ -40,7 +40,7 @@ class RelatedModelHandler implements PropertyHandler
         $modelClass = $this->namedType()->name;
 
         return $this->property->mergeValidationRules([
-            'required',
+            ...($this->property->type->nullable ? ['present', 'nullable'] : ['required']),
             Rule::exists($modelClass, (new $modelClass)->getKeyName()),
         ]);
     }
@@ -56,6 +56,6 @@ class RelatedModelHandler implements PropertyHandler
         /** @var BelongsTo<Model, T> $relationship */
         $relationship = $object->{$this->property->variableName}();
 
-        $relationship->associate($newKey);
+        $relationship->associate($newKey ?: null);
     }
 }

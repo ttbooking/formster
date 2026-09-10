@@ -47,7 +47,10 @@ class Model extends Component
                 /** @var Builder<EloquentModel> */
                 return $model->$scopeName(...$scopeParameters);
             })
-            ->pluck($this->titleColumn, (new $modelClass)->getKeyName());
+            ->pluck($this->titleColumn, (new $modelClass)->getKeyName())
+            ->when($this->property->type->nullable, static function (Collection $options) {
+                $options->prepend(trans('formster::form.null'), '');
+            });
 
         if ($value instanceof EloquentModel && ! $value instanceof $modelClass) {
             throw new InvalidArgumentException(
