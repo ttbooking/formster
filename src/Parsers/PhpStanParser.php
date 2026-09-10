@@ -20,6 +20,7 @@ use PHPStan\PhpDocParser\Ast\Type\ConstTypeNode;
 use PHPStan\PhpDocParser\Ast\Type\GenericTypeNode;
 use PHPStan\PhpDocParser\Ast\Type\IdentifierTypeNode;
 use PHPStan\PhpDocParser\Ast\Type\IntersectionTypeNode;
+use PHPStan\PhpDocParser\Ast\Type\NullableTypeNode;
 use PHPStan\PhpDocParser\Ast\Type\TypeNode;
 use PHPStan\PhpDocParser\Ast\Type\UnionTypeNode;
 use PHPStan\PhpDocParser\Lexer\Lexer;
@@ -132,16 +133,41 @@ class PhpStanParser implements HigherOrderAware, PropertyParser
     {
         $typeResolver ??= static fn (string $type) => $type;
 
+        $nullable = false;
+
+        if ($type instanceof NullableTypeNode) {
+            $type = $type->type;
+            $nullable = true;
+        }
+
+        if ($type instanceof UnionTypeNode) {
+            [$null, $types] = Arr::partition($type->types, static function (TypeNode $type) {
+                return $type instanceof IdentifierTypeNode && $type->name === 'null';
+            });
+
+            $nullable = $nullable || $null;
+
+            if (count($types) !== 1) {
+                return new AuraUnionType($this->parseTypes($types, $typeResolver), $nullable);
+            }
+
+            $type = $types[0];
+        }
+
         return match (true) {
-            $type instanceof UnionTypeNode => new AuraUnionType($this->parseTypes($type->types, $typeResolver)),
-            $type instanceof IntersectionTypeNode => new AuraIntersectionType($this->parseTypes($type->types, $typeResolver)),
+            $type instanceof IntersectionTypeNode => new AuraIntersectionType(
+                $this->parseTypes($type->types, $typeResolver),
+                nullable: $nullable
+            ),
             $type instanceof IdentifierTypeNode => new AuraNamedType(
                 $resolved = $typeResolver($type->name),
+                nullable: $nullable,
                 aura: $this->parseNested($resolved)
             ),
             $type instanceof GenericTypeNode => new AuraNamedType(
                 $resolved = $typeResolver($type->type->name),
                 $this->parseTypes($type->genericTypes, $typeResolver),
+                nullable: $nullable,
                 aura: $this->parseNested($resolved)
             ),
             $type instanceof ConstTypeNode => new AuraNamedType((string) $type->constExpr),
