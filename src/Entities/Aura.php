@@ -70,12 +70,12 @@ readonly class Aura
         return new static(
             summary: $aura->summary !== '' ? $aura->summary : $this->summary,
             description: $aura->description !== '' ? $aura->description : $this->description,
-            properties: $this->properties
-                ->map(static fn (AuraProperty $value, string $key) => isset($aura->properties[$key])
-                    ? $value->merge($aura->properties[$key])
-                    : $value
+            properties: $aura->properties->merge(
+                $this->properties->map(
+                    static fn (AuraProperty $property, string $key) => isset($aura->properties[$key])
+                        ? $property->merge($aura->properties[$key]) : $property
                 )
-                ->union($aura->properties),
+            ),
             meta: $aura->meta + $this->meta,
             viewPolicy: $aura->viewPolicy !== 'view' ? $aura->viewPolicy : $this->viewPolicy,
             updatePolicy: $aura->updatePolicy !== 'update' ? $aura->updatePolicy : $this->updatePolicy,
