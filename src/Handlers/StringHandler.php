@@ -35,7 +35,7 @@ class StringHandler implements PropertyHandler
         $str = $request->string($this->property->variableName);
 
         $object->{$this->property->variableName} = $this->property->type->contains('list<string>')
-            ? $str->isEmpty() ? [] : $str->split('/\R/')->all()
+            ? $str->isEmpty() ? [] : $str->split('/\R/u')->all()
             : (string) $str;
     }
 }
