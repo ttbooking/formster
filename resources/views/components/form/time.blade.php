@@ -11,14 +11,14 @@
 
 @if (! $object || ! $editable)
     @php($datetime = prop_val($property, $object))
-    <time {{ $attributes }} datetime="{{ $datetime->toDateTimeLocalString('minute') }}">{{ $datetime->isoFormat('L LT') }}</time>
+    <time {{ $attributes }} datetime="{{ $datetime->toTimeString('minute') }}">{{ $datetime->isoFormat('LT') }}</time>
 @else
     <input
         {{ $attributes->merge([
             'name' => $property->variableName,
-            'value' => old($attributes->get('name', $property->variableName), $object->{$property->variableName}?->toDateTimeLocalString('minute')),
+            'value' => old($attributes->get('name', $property->variableName), $object->{$property->variableName}?->toTimeString('minute')),
         ]) }}
-        type="datetime-local"
+        type="time"
         @readonly(! $property->writable)
     />
 @endif
