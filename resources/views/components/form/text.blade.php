@@ -1,20 +1,23 @@
 @use(function TTBooking\Formster\Support\old)
 @use(function TTBooking\Formster\Support\prop_val)
+@use(function TTBooking\Formster\Support\prop_param)
 
-@aware(['object', 'editable', 'typeParameters'])
+@aware(['object', 'editable'])
 @props(['property'])
 
 @php
     /** @var TTBooking\Formster\Entities\FinalAuraProperty $property */
 @endphp
 
+@php($multiline = $property->type->contains('list<string>') ?: prop_param($property, 0, 'multiline'))
+
 @if (! $object || ! $editable)
-    @if ($property->type->contains('list<string>') || ($typeParameters[0] ?? false))
+    @if ($multiline)
         <span {{ $attributes }}><pre @style('white-space: pre-wrap')>{{ implode("\n", (array) prop_val($property, $object)) }}</pre></span>
     @else
         <span {{ $attributes }} @style('word-wrap: break-word')>{{ prop_val($property, $object) }}</span>
     @endif
-@elseif ($multiline = $property->type->contains('list<string>') || ($typeParameters[0] ?? false))
+@elseif ($multiline)
     <textarea
         {{ $attributes->except('value')->merge(['name' => $property->variableName]) }}
         @style([
