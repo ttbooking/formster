@@ -6,9 +6,11 @@ namespace TTBooking\Formster\Support;
 
 use Closure;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Number;
 use Illuminate\Support\Str;
 use ReflectionEnumUnitCase;
+use TTBooking\Formster\Entities\AuraNamedType;
 use TTBooking\Formster\Entities\FinalAuraProperty;
 use UnitEnum;
 
@@ -57,6 +59,25 @@ function enum_desc(UnitEnum $case, null|string|Closure $fallback = null): string
 function prop_val(FinalAuraProperty $property, ?object $object = null): mixed
 {
     return isset($object) ? $object->{$property->variableName} : $property->defaultValue;
+}
+
+function prop_param(FinalAuraProperty $property, int $index, ?string $name = null): mixed
+{
+    $param = $property->type instanceof AuraNamedType
+        ? $property->type->atomicParameters()->get($index)?->asConstExpr() : null;
+
+    if (isset($param)) {
+        return $param;
+    }
+
+    if (isset($property->meta['parameters']) && Arr::accessible($params = $property->meta['parameters'])) {
+        /** @var array<mixed> $params */
+        return isset($name)
+            ? $params[$name] ?? $params[$index] ?? null
+            : $params[$index] ?? null;
+    }
+
+    return null;
 }
 
 /**
