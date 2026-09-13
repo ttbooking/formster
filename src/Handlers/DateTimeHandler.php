@@ -15,7 +15,12 @@ use function TTBooking\Formster\Support\prop_param;
 
 class DateTimeHandler implements PropertyHandler
 {
-    public function __construct(protected FinalAuraProperty $property) {}
+    protected TemporalComponent $variant;
+
+    public function __construct(protected FinalAuraProperty $property)
+    {
+        $this->variant = prop_param($this->property, 0, 'variant') ?? TemporalComponent::Both; // @phpstan-ignore assign.propertyType
+    }
 
     public static function satisfies(FinalAuraProperty $property): bool
     {
@@ -24,10 +29,10 @@ class DateTimeHandler implements PropertyHandler
 
     public function component(): string
     {
-        return match (prop_param($this->property, 0, 'variant') ?? TemporalComponent::Both) {
+        return match ($this->variant) {
             TemporalComponent::Date => 'formster::form.date',
             TemporalComponent::Time => 'formster::form.time',
-            default => 'formster::form.datetime',
+            TemporalComponent::Both => 'formster::form.datetime',
         };
     }
 
@@ -46,10 +51,10 @@ class DateTimeHandler implements PropertyHandler
 
     protected function dateFormat(bool $reset = true): string
     {
-        return match (prop_param($this->property, 0, 'variant') ?? TemporalComponent::Both) {
+        return match ($this->variant) {
             TemporalComponent::Date => $reset ? '!Y-m-d' : 'Y-m-d',
             TemporalComponent::Time => $reset ? '!H:i' : 'H:i',
-            default => 'Y-m-d\TH:i',
+            TemporalComponent::Both => 'Y-m-d\TH:i',
         };
     }
 }
