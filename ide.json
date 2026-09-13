@@ -15,13 +15,7 @@
             "condition": [
                 {
                     "place": "returnString",
-                    "methodNames": ["component"],
-                    "classParentFqn": ["TTBooking\\Formster\\Contracts\\PropertyHandler"]
-                },
-                {
-                    "place": "returnString",
-                    "methodNames": ["component"],
-                    "classFqn": ["TTBooking\\Formster\\Enums\\TemporalComponent"]
+                    "methodNames": ["component"]
                 }
             ]
         }
