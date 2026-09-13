@@ -10,7 +10,7 @@ use TTBooking\Formster\Entities\FinalAuraProperty;
 
 class BooleanHandler implements PropertyHandler
 {
-    public function __construct(public FinalAuraProperty $property) {}
+    public function __construct(protected FinalAuraProperty $property) {}
 
     public static function satisfies(FinalAuraProperty $property): bool
     {

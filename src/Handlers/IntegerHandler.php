@@ -13,7 +13,7 @@ class IntegerHandler implements PropertyHandler
 {
     use AssertsPropertyTypes;
 
-    public function __construct(public FinalAuraProperty $property) {}
+    public function __construct(protected FinalAuraProperty $property) {}
 
     public static function satisfies(FinalAuraProperty $property): bool
     {

@@ -18,7 +18,7 @@ class FileHandler implements PropertyHandler
     /** @var class-string<File> */
     protected const TYPE = File::class;
 
-    public function __construct(public FinalAuraProperty $property) {}
+    public function __construct(protected FinalAuraProperty $property) {}
 
     public static function satisfies(FinalAuraProperty $property): bool
     {

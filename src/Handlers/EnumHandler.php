@@ -17,7 +17,7 @@ class EnumHandler implements PropertyHandler
 {
     use AssertsPropertyTypes;
 
-    public function __construct(public FinalAuraProperty $property, protected int $buttonLimit = 2) {}
+    public function __construct(protected FinalAuraProperty $property, protected int $buttonLimit = 2) {}
 
     public static function satisfies(FinalAuraProperty $property): bool
     {

@@ -15,7 +15,7 @@ use function TTBooking\Formster\Support\prop_param;
 
 class DateTimeHandler implements PropertyHandler
 {
-    public function __construct(public FinalAuraProperty $property) {}
+    public function __construct(protected FinalAuraProperty $property) {}
 
     public static function satisfies(FinalAuraProperty $property): bool
     {

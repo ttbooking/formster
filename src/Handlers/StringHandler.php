@@ -11,7 +11,7 @@ use TTBooking\Formster\Entities\FinalAuraProperty;
 
 class StringHandler implements PropertyHandler
 {
-    public function __construct(public FinalAuraProperty $property) {}
+    public function __construct(protected FinalAuraProperty $property) {}
 
     public static function satisfies(FinalAuraProperty $property): bool
     {
