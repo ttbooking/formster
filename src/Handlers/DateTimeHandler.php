@@ -29,32 +29,22 @@ class DateTimeHandler implements PropertyHandler
 
     public function component(): string
     {
-        return match ($this->variant) {
-            TemporalComponent::Date => 'formster::form.date',
-            TemporalComponent::Time => 'formster::form.time',
-            TemporalComponent::Both => 'formster::form.datetime',
-        };
+        return $this->variant->component();
     }
 
     public function validationRules(): string|array
     {
         return $this->property->mergeValidationRules([
             ...($this->property->type->nullable ? ['present', 'nullable'] : ['required']),
-            Rule::date()->format($this->dateFormat(false)),
+            Rule::date()->format($this->variant->dateFormat()),
         ]);
     }
 
     public function handle(object $object, Request $request): void
     {
-        $object->{$this->property->variableName} = $request->date($this->property->variableName, $this->dateFormat());
-    }
-
-    protected function dateFormat(bool $reset = true): string
-    {
-        return match ($this->variant) {
-            TemporalComponent::Date => $reset ? '!Y-m-d' : 'Y-m-d',
-            TemporalComponent::Time => $reset ? '!H:i' : 'H:i',
-            TemporalComponent::Both => 'Y-m-d\TH:i',
-        };
+        $object->{$this->property->variableName} = $request->date(
+            $this->property->variableName,
+            '!'.$this->variant->dateFormat()
+        );
     }
 }
