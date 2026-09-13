@@ -5,8 +5,23 @@
             "complete": "translationKey",
             "condition": [
                 {
-                    "newClassFqn": ["\\TTBooking\\Formster\\Support\\Trans"],
+                    "newClassFqn": ["TTBooking\\Formster\\Support\\Trans"],
                     "parameters": [1]
+                }
+            ]
+        },
+        {
+            "complete": "bladeComponent",
+            "condition": [
+                {
+                    "place": "returnString",
+                    "methodNames": ["component"],
+                    "classParentFqn": ["TTBooking\\Formster\\Contracts\\PropertyHandler"]
+                },
+                {
+                    "place": "returnString",
+                    "methodNames": ["component"],
+                    "classFqn": ["TTBooking\\Formster\\Enums\\TemporalComponent"]
                 }
             ]
         }
@@ -61,7 +76,7 @@
             ],
             "phpNamespaces": [
                 {
-                    "phpNamespace": "\\TTBooking\\Formster\\View\\Components",
+                    "phpNamespace": "TTBooking\\Formster\\View\\Components",
                     "tagNamespace": "formster"
                 }
             ]
