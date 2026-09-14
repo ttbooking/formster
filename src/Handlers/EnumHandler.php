@@ -30,7 +30,7 @@ class EnumHandler implements PropertyHandler
         /** @var class-string<BackedEnum> $enumClass */
         $enumClass = $this->namedType()->name;
 
-        return count($enumClass::cases()) > $this->buttonLimit
+        return count($enumClass::cases()) + $this->property->type->nullable > $this->buttonLimit
             ? 'formster::form.select'
             : 'formster::form.radio';
     }
@@ -40,11 +40,20 @@ class EnumHandler implements PropertyHandler
         /** @var class-string<BackedEnum> $enumClass */
         $enumClass = $this->namedType()->name;
 
-        return $this->property->mergeValidationRules(['required', Rule::enum($enumClass)]);
+        return $this->property->mergeValidationRules([
+            ...($this->property->type->nullable ? ['present', 'nullable'] : ['required']),
+            Rule::enum($enumClass),
+        ]);
     }
 
     public function handle(object $object, Request $request): void
     {
+        if ($this->property->type->nullable && $request->isNotFilled($this->property->variableName)) {
+            $object->{$this->property->variableName} = null;
+
+            return;
+        }
+
         /** @var class-string<BackedEnum> $enumClass */
         $enumClass = $this->namedType()->name;
 

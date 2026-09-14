@@ -14,6 +14,17 @@
     <span {{ $attributes }}>{{ enum_desc(prop_val($property, $object)) }}</span>
 @else
     <fieldset {{ $attributes->except('name') }} @disabled(! $property->writable)>
+        @if ($property->type->nullable)
+            <label>
+                <input
+                    {{ $attributes->merge(['name' => $property->variableName])->only('name') }}
+                    type="radio"
+                    value=""
+                    @checked(is_null($value ?? old($attributes->get('name', $property->variableName))))
+                />
+                <i>{{ __('formster::form.null') }}</i>
+            </label>
+        @endif
         @foreach ($property->type->name::cases() as $case)
             <label>
                 <input
