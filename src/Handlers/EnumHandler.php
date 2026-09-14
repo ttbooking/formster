@@ -12,6 +12,7 @@ use TTBooking\Formster\Concerns\AssertsPropertyTypes;
 use TTBooking\Formster\Contracts\PropertyHandler;
 use TTBooking\Formster\Entities\AuraNamedType;
 use TTBooking\Formster\Entities\FinalAuraProperty;
+use UnitEnum;
 
 class EnumHandler implements PropertyHandler
 {
@@ -22,12 +23,12 @@ class EnumHandler implements PropertyHandler
     public static function satisfies(FinalAuraProperty $property): bool
     {
         return $property->type instanceof AuraNamedType
-            && is_subclass_of($property->type->name, BackedEnum::class);
+            && is_subclass_of($property->type->name, UnitEnum::class);
     }
 
     public function component(): string
     {
-        /** @var class-string<BackedEnum> $enumClass */
+        /** @var class-string<UnitEnum> $enumClass */
         $enumClass = $this->namedType()->name;
 
         return count($enumClass::cases()) + $this->property->type->nullable > $this->buttonLimit
@@ -37,12 +38,14 @@ class EnumHandler implements PropertyHandler
 
     public function validationRules(): string|array
     {
-        /** @var class-string<BackedEnum> $enumClass */
+        /** @var class-string<UnitEnum> $enumClass */
         $enumClass = $this->namedType()->name;
 
         return $this->property->mergeValidationRules([
             ...($this->property->type->nullable ? ['present', 'nullable'] : ['required']),
-            Rule::enum($enumClass),
+            is_subclass_of($enumClass, BackedEnum::class)
+                ? Rule::enum($enumClass)
+                : Rule::in(array_column($enumClass::cases(), 'name')),
         ]);
     }
 
@@ -54,13 +57,16 @@ class EnumHandler implements PropertyHandler
             return;
         }
 
-        /** @var class-string<BackedEnum> $enumClass */
+        /** @var class-string<UnitEnum> $enumClass */
         $enumClass = $this->namedType()->name;
 
-        $intBacked = (new ReflectionEnum($enumClass))->getBackingType()?->getName() === 'int';
+        $backedBy = is_subclass_of($enumClass, BackedEnum::class)
+            ? (new ReflectionEnum($enumClass))->getBackingType()?->getName() : null;
 
-        $object->{$this->property->variableName} = $intBacked
-            ? $enumClass::from($request->integer($this->property->variableName))
-            : $enumClass::from((string) $request->string($this->property->variableName));
+        $object->{$this->property->variableName} = match ($backedBy) {
+            'int' => $enumClass::from($request->integer($this->property->variableName)),
+            'string' => $enumClass::from((string) $request->string($this->property->variableName)),
+            default => constant($enumClass.'::'.$request->string($this->property->variableName)),
+        };
     }
 }
