@@ -16,6 +16,7 @@ use PHPStan\PhpDocParser\Ast\PhpDoc\PhpDocNode;
 use PHPStan\PhpDocParser\Ast\PhpDoc\PhpDocTagNode;
 use PHPStan\PhpDocParser\Ast\PhpDoc\PhpDocTagValueNode;
 use PHPStan\PhpDocParser\Ast\PhpDoc\PhpDocTextNode;
+use PHPStan\PhpDocParser\Ast\PhpDoc\PropertyTagValueNode;
 use PHPStan\PhpDocParser\Ast\Type\ConstTypeNode;
 use PHPStan\PhpDocParser\Ast\Type\GenericTypeNode;
 use PHPStan\PhpDocParser\Ast\Type\IdentifierTypeNode;
@@ -85,21 +86,19 @@ class PhpStanParser implements HigherOrderAware, PropertyParser
         );
 
         $props = [];
-        foreach (['@property', '@property-read', '@property-write'] as $tag) {
-            foreach ($phpDocNode->getPropertyTagValues($tag) as $node) {
-                $variableName = ltrim($node->propertyName, '$');
-                [$hasDefaultValue, $defaultValue] = $this->fetchDefaultPropertyValue($defaultObject, $variableName);
+        foreach ($this->getPropertyTagValues($phpDocNode) as [$tag, $node]) {
+            $variableName = ltrim($node->propertyName, '$');
+            [$hasDefaultValue, $defaultValue] = $this->fetchDefaultPropertyValue($defaultObject, $variableName);
 
-                $props[] = new AuraProperty(
-                    readable: $tag !== '@property-write',
-                    writable: $tag !== '@property-read',
-                    type: $this->parseType($node->type, $resolver),
-                    variableName: $variableName,
-                    description: $node->description,
-                    hasDefaultValue: $hasDefaultValue,
-                    defaultValue: $defaultValue,
-                );
-            }
+            $props[] = new AuraProperty(
+                readable: $tag !== '@property-write',
+                writable: $tag !== '@property-read',
+                type: $this->parseType($node->type, $resolver),
+                variableName: $variableName,
+                description: $node->description,
+                hasDefaultValue: $hasDefaultValue,
+                defaultValue: $defaultValue,
+            );
         }
 
         $comment = (string) Arr::first($phpDocNode->children, static fn (PhpDocChildNode $child) => $child instanceof PhpDocTextNode);
@@ -215,12 +214,26 @@ class PhpStanParser implements HigherOrderAware, PropertyParser
     }
 
     /**
+     * @param  string|list<string>  $tagNames
+     * @return array{string, PropertyTagValueNode}[]
+     */
+    protected function getPropertyTagValues(PhpDocNode $node, string|array $tagNames = ['@property', '@property-read', '@property-write']): array
+    {
+        /** @var array{string, PropertyTagValueNode}[] */
+        return array_map(static fn (PhpDocTagNode $tagNode) => [$tagNode->name, $tagNode->value], array_filter(
+            $this->getTagsByName($node, $tagNames),
+            static fn (PhpDocTagNode $tagNode) => $tagNode->value instanceof PropertyTagValueNode
+        ));
+    }
+
+    /**
+     * @param  string|list<string>  $tagNames
      * @return GenericTagValueNode[]
      */
-    protected function getGenericTagValues(PhpDocNode $node, string $tagName): array
+    protected function getGenericTagValues(PhpDocNode $node, string|array $tagNames): array
     {
         return array_filter(
-            array_column($node->getTagsByName($tagName), 'value'),
+            array_column($this->getTagsByName($node, $tagNames), 'value'),
             static fn (PhpDocTagValueNode $value) => $value instanceof GenericTagValueNode,
         );
     }
@@ -231,16 +244,25 @@ class PhpStanParser implements HigherOrderAware, PropertyParser
     protected function getMetaTagValues(PhpDocNode $node): array
     {
         return array_filter(
-            array_column($this->getMetaTags($node), 'value', 'name'),
+            array_column($this->getTagsStartingWith($node, '@formster-meta-'), 'value', 'name'),
             static fn (PhpDocTagValueNode $value) => $value instanceof GenericTagValueNode,
         );
     }
 
     /**
+     * @param  string|list<string>  $tagNames
      * @return PhpDocTagNode[]
      */
-    protected function getMetaTags(PhpDocNode $node): array
+    protected function getTagsByName(PhpDocNode $node, string|array $tagNames): array
     {
-        return array_filter($node->getTags(), static fn (PhpDocTagNode $tag) => str_starts_with($tag->name, '@formster-meta-'));
+        return array_filter($node->getTags(), static fn (PhpDocTagNode $tag) => in_array($tag->name, (array) $tagNames, true));
+    }
+
+    /**
+     * @return PhpDocTagNode[]
+     */
+    protected function getTagsStartingWith(PhpDocNode $node, string $prefix): array
+    {
+        return array_filter($node->getTags(), static fn (PhpDocTagNode $tag) => str_starts_with($tag->name, $prefix));
     }
 }
