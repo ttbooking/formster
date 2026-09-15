@@ -39,6 +39,7 @@ return [
         TTBooking\Formster\Handlers\ColorHandler::class,
         TTBooking\Formster\Handlers\ImageHandler::class,
         TTBooking\Formster\Handlers\FileHandler::class,
+        TTBooking\Formster\Handlers\HtmlableHandler::class,
     ],
 
     /*
