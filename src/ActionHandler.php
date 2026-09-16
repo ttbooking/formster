@@ -4,16 +4,27 @@ declare(strict_types=1);
 
 namespace TTBooking\Formster;
 
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use TTBooking\Formster\Concerns\HasEvents;
 use TTBooking\Formster\Contracts\HandlerFactory;
 use TTBooking\Formster\Contracts\PropertyParser;
 use TTBooking\Formster\Entities\FinalAuraProperty;
+use TTBooking\Formster\Events\PropertyChanged;
+use TTBooking\Formster\Events\PropertyChanging;
 
 use function TTBooking\Formster\Support\prop_desc;
 
 class ActionHandler implements Contracts\ActionHandler
 {
+    use HasEvents;
+
+    /**
+     * The event dispatcher instance.
+     */
+    protected static ?Dispatcher $dispatcher;
+
     public function __construct(protected PropertyParser $parser, protected HandlerFactory $handler) {}
 
     public function update(Request $request, object $object): object
@@ -40,7 +51,15 @@ class ActionHandler implements Contracts\ActionHandler
         $request->validate($rules, [], $attributes);
 
         foreach ($properties as $property) {
+            if ($this->fireEvent(new PropertyChanging($object, $property)) === false) {
+                continue;
+            }
+
+            $oldValue = $object->{$property->variableName};
+
             $this->handler->for($property)->handle($object, $request);
+
+            $this->fireEvent(new PropertyChanged($object, $property, $oldValue), false);
         }
 
         return $object;

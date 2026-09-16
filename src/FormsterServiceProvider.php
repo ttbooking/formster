@@ -42,6 +42,7 @@ class FormsterServiceProvider extends ServiceProvider // implements DeferrablePr
     {
         $this->registerResources();
         $this->registerComponents();
+        $this->registerEvents();
         $this->registerGateCallbacks();
 
         if ($this->app->runningInConsole()) {
@@ -65,6 +66,12 @@ class FormsterServiceProvider extends ServiceProvider // implements DeferrablePr
     {
         Blade::componentNamespace('TTBooking\\Formster\\View\\Components', 'formster');
         Blade::anonymousComponentPath(__DIR__.'/../resources/views/components', 'formster');
+    }
+
+    protected function registerEvents(): void
+    {
+        /** @phpstan-ignore-next-line */
+        ActionHandler::setEventDispatcher($this->app['events']);
     }
 
     protected function registerGateCallbacks(): void
@@ -126,6 +133,8 @@ class FormsterServiceProvider extends ServiceProvider // implements DeferrablePr
 
         $this->app->when(HandlerFactory::class)->needs('$handlers')->giveConfig('formster.property_handlers', []);
         $this->app->alias('property-handler', Contracts\HandlerFactory::class);
+
+        $this->app->alias('action-handler', Contracts\ActionHandler::class);
     }
 
     /**
