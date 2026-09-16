@@ -52,7 +52,7 @@ class ActionHandler implements Contracts\ActionHandler
         $request->validate($rules, [], $attributes);
 
         foreach ($properties as $property) {
-            if ($this->fireEvent(new PropertyChanging($object, $property)) === false) {
+            if ($this->fireEvent(new PropertyChanging($object, $aura, $property)) === false) {
                 continue;
             }
 
@@ -61,7 +61,7 @@ class ActionHandler implements Contracts\ActionHandler
             $this->handler->for($property)->handle($object, $request);
 
             if (! static::sameAs($object->{$property->variableName}, $oldValue)) {
-                $this->fireEvent(new PropertyChanged($object, $property, $oldValue), false);
+                $this->fireEvent(new PropertyChanged($object, $aura, $property, $oldValue), false);
             }
         }
 
