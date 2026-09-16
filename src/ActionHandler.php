@@ -8,6 +8,7 @@ use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use TTBooking\Formster\Concerns\HasEvents;
+use TTBooking\Formster\Contracts\Comparable;
 use TTBooking\Formster\Contracts\HandlerFactory;
 use TTBooking\Formster\Contracts\PropertyParser;
 use TTBooking\Formster\Entities\FinalAuraProperty;
@@ -59,9 +60,16 @@ class ActionHandler implements Contracts\ActionHandler
 
             $this->handler->for($property)->handle($object, $request);
 
-            $this->fireEvent(new PropertyChanged($object, $property, $oldValue), false);
+            if (! static::sameAs($object->{$property->variableName}, $oldValue)) {
+                $this->fireEvent(new PropertyChanged($object, $property, $oldValue), false);
+            }
         }
 
         return $object;
+    }
+
+    protected static function sameAs(mixed $value1, mixed $value2): bool
+    {
+        return $value1 instanceof Comparable ? $value1->sameAs($value2) : $value1 == $value2;
     }
 }
