@@ -12,6 +12,8 @@ use TTBooking\Formster\Contracts\Comparable;
 use TTBooking\Formster\Contracts\HandlerFactory;
 use TTBooking\Formster\Contracts\PropertyParser;
 use TTBooking\Formster\Entities\FinalAuraProperty;
+use TTBooking\Formster\Events\ObjectChanged;
+use TTBooking\Formster\Events\ObjectChanging;
 use TTBooking\Formster\Events\PropertyChanged;
 use TTBooking\Formster\Events\PropertyChanging;
 
@@ -51,6 +53,11 @@ class ActionHandler implements Contracts\ActionHandler
 
         $request->validate($rules, [], $attributes);
 
+        if ($this->fireEvent(new ObjectChanging($object, $aura)) === false) {
+            return $object;
+        }
+
+        $oldValues = $newValues = [];
         foreach ($properties as $property) {
             if ($this->fireEvent(new PropertyChanging($object, $aura, $property)) === false) {
                 continue;
@@ -60,10 +67,14 @@ class ActionHandler implements Contracts\ActionHandler
 
             $this->handler->for($property)->handle($object, $request);
 
-            if (! static::sameAs($object->{$property->variableName}, $oldValue)) {
+            if (! static::sameAs($newValue = $object->{$property->variableName}, $oldValue)) {
                 $this->fireEvent(new PropertyChanged($object, $aura, $property, $oldValue), false);
+                $oldValues[$property->variableName] = $oldValue;
+                $newValues[$property->variableName] = $newValue;
             }
         }
+
+        $this->fireEvent(new ObjectChanged($object, $aura, $oldValues, $newValues), false);
 
         return $object;
     }
