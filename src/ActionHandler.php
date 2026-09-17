@@ -74,7 +74,9 @@ class ActionHandler implements Contracts\ActionHandler
             }
         }
 
-        $this->fireEvent(new ObjectChanged($object, $aura, $oldValues, $newValues), false);
+        if ($oldValues && $newValues) {
+            $this->fireEvent(new ObjectChanged($object, $aura, $oldValues, $newValues), false);
+        }
 
         return $object;
     }
