@@ -16,5 +16,5 @@ Route::get('/formster/{model}/edit', function (Frankenstein $model) {
 Route::put('/formster/{model}', function (Request $request, Frankenstein $model) {
     ActionHandler::update($request, $model)->save();
 
-    return redirect()->back();
+    return back();
 })->name('update');
