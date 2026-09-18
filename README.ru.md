@@ -38,6 +38,7 @@ Route::put('/orders/{order}', function (Request $request, Order $order) {
 - [Обработчики свойств (Handlers)](#обработчики-свойств-handlers)
 - [Поддерживаемые типы и виджеты](#поддерживаемые-типы-и-виджеты)
 - [Валидация](#валидация)
+- [События](#события)
 - [Псевдотипы и касты](#псевдотипы-и-касты)
   - [Color — цвет](#color--цвет)
   - [DateTimeZone — часовой пояс](#datetimezone--часовой-пояс)
@@ -61,8 +62,9 @@ Route::put('/orders/{order}', function (Request $request, Order $order) {
 - 🚀 **Формы без шаблонов.** Объявите модель — Formster сам построит редактируемую форму или таблицу-просмотр.
 - 🧠 **Несколько источников метаданных.** Свойства извлекаются из PHPDoc (`@property`), нативных типов PHP (рефлексия) и PHP-атрибутов `#[Aura]` / `#[AuraProperty]`. Источники можно комбинировать.
 - 🧩 **Богатая система типов.** Поддержка union (`A|B`), intersection (`A&B`), nullable, дженериков (`Collection<int, User>`, `list<File>`, `class-string<User>`) и рекурсивного разбора вложенных классов.
-- 🎛️ **Готовые виджеты** для строк, чисел, дробных, булевых, перечислений, дат, часовых поясов, цветов, файлов и изображений.
+- 🎛️ **Готовые виджеты** для строк, чисел, дробных, булевых, перечислений, дат, часовых поясов, цветов, файлов, изображений, связей `belongsTo` и готового HTML.
 - ✅ **Автоматическая валидация.** Каждый обработчик добавляет своему полю правила по умолчанию; собственные правила задаются в метаданных свойства и сливаются с дефолтными через нотацию `'...'`, а сообщения об ошибках выводятся рядом с полями.
+- 📣 **События.** Во время применения отправленных данных рассылаются `ObjectChanging` / `PropertyChanging` (можно отменить) и `ObjectChanged` / `PropertyChanged`.
 - 🖼️ **Псевдотипы файлов и изображений** с загрузкой через `Storage`, автоматическими превью (Intervention Image) и очисткой «осиротевших» файлов.
 - 🔒 **Интеграция с Laravel Gate.** Просмотр и редактирование каждого свойства управляются политиками (`viewPolicy` / `updatePolicy`), с мягким режимом по умолчанию и переключаемым строгим режимом.
 - 🌍 **Локализация** подписей полей, описаний и вариантов перечислений (из коробки английский и русский).
@@ -155,7 +157,7 @@ Route::put('/formster/{model}', function (Request $request, Frankenstein $model)
 })->name('update');
 ```
 
-`ActionHandler::update()` сначала валидирует запрос (правила собираются с обработчика и метаданных каждого свойства, а в сообщениях об ошибках поля называются своими локализованными описаниями), затем обходит доступные для записи свойства модели (read-only свойства пропускаются), применяет нужный обработчик к каждому полю, учитывает политики доступа и возвращает изменённый объект — остаётся лишь вызвать `->save()`.
+`ActionHandler::update()` сначала валидирует запрос (правила собираются с обработчика и метаданных каждого свойства, а в сообщениях об ошибках поля называются своими локализованными описаниями), затем обходит доступные для записи свойства модели (read-only свойства пропускаются), применяет нужный обработчик к каждому полю, учитывает политики доступа и возвращает изменённый объект — остаётся лишь вызвать `->save()`. Попутно рассылаются [события](#события), через которые изменения можно отследить или запретить.
 
 ---
 
@@ -315,29 +317,76 @@ interface PropertyHandler
 
 `HandlerFactory::for($property)` перебирает обработчики из конфига `formster.property_handlers` и возвращает первый, для которого `satisfies()` вернул `true`. Если ни один не подошёл, используется `FallbackHandler`.
 
-> Обработчики получают финализированное свойство `FinalAuraProperty`. Правила из `validationRules()` применяются автоматически при обработке отправки — см. [Валидация](#валидация).
+> Обработчики получают финализированное свойство `FinalAuraProperty` (свойство конструктора объявлено `protected`, так что наследники могут им пользоваться). Правила из `validationRules()` применяются автоматически при обработке отправки — см. [Валидация](#валидация).
+
+Обработчику типа «только для показа» правила не нужны, а `handle()` остаётся пустым — именно так устроен `HtmlableHandler`.
 
 ---
 
 ## Поддерживаемые типы и виджеты
 
-| Тип свойства          | Обработчик            | Виджет (Blade)               | HTML-поле                           | Правила валидации (по умолчанию) |
-| --------------------- | --------------------- | ---------------------------- | ----------------------------------- | -------------------------------- |
-| `bool`                | `BooleanHandler`      | `form.checkbox`              | `<input type="checkbox">`           | `sometimes\|in:on`               |
-| `int`                 | `IntegerHandler`      | `form.number`                | `<input type="number">`             | `required\|integer`              |
-| `float`               | `FloatHandler`        | `form.decimal`               | `<input type="number" step="0.01">` | `required\|numeric`              |
-| `string`              | `StringHandler`       | `form.text`                  | `<input type="text">`               | `required\|string`               |
-| `BackedEnum`          | `EnumHandler`         | `form.radio` / `form.select` | переключатели или выпадающий список | `required` + `Rule::enum(...)`   |
-| `DateTimeInterface`   | `DateTimeHandler`     | `form.datetime`              | `<input type="datetime-local">`     | `required\|date`                 |
-| `DateTimeZone`        | `DateTimeZoneHandler` | `form.timezone`              | `<select>` с часовыми поясами       | `required\|timezone`             |
-| `Color`               | `ColorHandler`        | `form.color`                 | `<input type="color">`              | `required\|hex_color`            |
-| `File` / `list<File>` | `FileHandler`         | `form.file`                  | `<input type="file">`               | `required\|file`                 |
-| `Image`               | `ImageHandler`        | `form.image`                 | `<input type="file">` + превью      | `required\|image:allow_svg`      |
-| *прочее*              | `FallbackHandler`     | `form.disclaimer`            | сообщение «тип не поддерживается»   | —                                |
+Таблица следует порядку из `formster.property_handlers` — в этом же порядке проверяется `satisfies()`.
 
-**Enum.** `EnumHandler` рендерит переключатели (`radio`), если число вариантов не превышает порог `buttonLimit` (по умолчанию **2**), и выпадающий список (`select`) в противном случае.
+| Тип свойства              | Обработчик            | Виджет (Blade)                              | HTML-поле                                          | Правила валидации (по умолчанию)                 |
+| ------------------------- | --------------------- | ------------------------------------------- | -------------------------------------------------- | ------------------------------------------------ |
+| `bool`                    | `BooleanHandler`      | `form.checkbox`                             | `<input type="checkbox">`                          | `required\|boolean`                              |
+| `int`                     | `IntegerHandler`      | `form.number`                               | `<input type="number">`                            | `required\|integer` (+ `min` / `max`)            |
+| `float`                   | `FloatHandler`        | `form.decimal`                              | `<input type="number" step="0.01">`                | `required\|numeric`                              |
+| `string` / `list<string>` | `StringHandler`       | `form.text`                                 | `<input type="text">` / `<textarea>`               | `present\|nullable\|string`                      |
+| `UnitEnum` / `BackedEnum` | `EnumHandler`         | `form.radio` / `form.select`                | переключатели или выпадающий список                | `required` + `Rule::enum(...)` / `Rule::in(...)` |
+| `DateTimeInterface`       | `DateTimeHandler`     | `form.datetime` / `form.date` / `form.time` | `<input type="datetime-local">`, `date` или `time` | `required` + `Rule::date()->format(...)`         |
+| `DateTimeZone`            | `DateTimeZoneHandler` | `form.timezone`                             | `<select>` с часовыми поясами                      | `required\|timezone`                             |
+| `Model` (belongs to)      | `RelatedModelHandler` | `form.model`                                | `<select>` со связанными записями                  | `required` + `Rule::exists(...)`                 |
+| `Color`                   | `ColorHandler`        | `form.color`                                | `<input type="color">`                             | `required\|hex_color`                            |
+| `Image`                   | `ImageHandler`        | `form.image`                                | `<input type="file">` + превью                     | `image:allow_svg`                                |
+| `File` / `list<File>`     | `FileHandler`         | `form.file`                                 | `<input type="file">`                              | `file`                                           |
+| `Htmlable`                | `HtmlableHandler`     | `form.html`                                 | готовый HTML (только просмотр)                     | —                                                |
+| *прочее*                  | `FallbackHandler`     | `form.disclaimer`                           | сообщение «тип не поддерживается»                  | —                                                |
+
+**Nullable-свойства.** Для nullable-типа (`?Status`, `Status|null`) обработчик заменяет `required` на `present|nullable`, поэтому поле можно оставить пустым — так ведут себя `EnumHandler`, `DateTimeHandler` и `RelatedModelHandler`. У виджетов перечисления и связи дополнительно появляется явный вариант «не указано».
+
+**Enum.** `EnumHandler` рендерит переключатели (`radio`), если число вариантов (плюс вариант «не указано» для nullable-свойства) не превышает порог `buttonLimit` (по умолчанию **2**), и выпадающий список (`select`) в противном случае.
+
+Поддерживаются как backed-, так и **чистые (non-backed) перечисления**: backed валидируется через `Rule::enum()` и восстанавливается методом `from()`, чистое — по списку имён вариантов (`Rule::in()`) и через `constant()`.
 
 Описания вариантов перечисления локализуются (см. [Локализация](#локализация)); при отсутствии перевода берётся PHPDoc-комментарий кейса или его «человекочитаемое» имя.
+
+**Псевдонимы типов.** Скалярные обработчики понимают и привычные PHPDoc-псевдонимы: `boolean` для `bool`, `integer` для `int`, `double` / `real` для `float`, а также `non-empty-string` / `class-string` / `Stringable` для `string`.
+
+**Целые числа.** Границы берутся из самого типа — `int<1, 100>`, `positive-int`, `negative-int`, `non-positive-int`, `non-negative-int` — и превращаются в правила `min` / `max` и соответствующие атрибуты `<input type="number">`.
+
+**Дата и время.** Виджет выбирается параметром типа — вариантом перечисления `TTBooking\Formster\Enums\TemporalComponent`, записанным полностью (константные выражения в аннотациях не разрешаются через `use`-импорты):
+
+```php
+/**
+ * Дата и время, <input type="datetime-local"> (по умолчанию):
+ * @property \DateTimeInterface $starts_at
+ *
+ * Только дата, <input type="date">:
+ * @property \DateTimeInterface<\TTBooking\Formster\Enums\TemporalComponent::Date> $birthday
+ *
+ * Только время, <input type="time">:
+ * @property \DateTimeInterface<\TTBooking\Formster\Enums\TemporalComponent::Time> $opens_at
+ */
+```
+
+Значение валидируется и разбирается по формату выбранного варианта (`Y-m-d`, `H:i`, `Y-m-d\TH:i`).
+
+**Связи с моделями.** `RelatedModelHandler` берёт на себя любое свойство, типизированное классом Eloquent-модели. Имя свойства должно совпадать с методом связи `belongsTo` у модели: виджет выводит список связанных записей, а при отправке выбранный ключ передаётся в `$relationship->associate()`. Для nullable-связи вариант «не указано» её очищает.
+
+Выпадающий список настраивается параметрами типа — `Model<TTitleColumn, TScope, TScopeParameters>`:
+
+```php
+/**
+ * Варианты подписаны колонкой «name» (по умолчанию):
+ * @property \App\Models\Manager $manager
+ *
+ * Варианты подписаны колонкой «email» и ограничены скоупом «active»:
+ * @property \App\Models\User<"email", "active">|null $owner
+ */
+```
+
+**Htmlable.** Свойство с типом `Illuminate\Contracts\Support\Htmlable` выводится как есть (`toHtml()`) и в форме, и в таблице. Виджет только показывает: он не добавляет правил валидации и ничего не записывает — удобно для вычисляемых колонок, бейджей или ссылок, которые модель собирает сама.
 
 ---
 
@@ -361,6 +410,55 @@ class Frankenstein extends Model {}
 ```
 
 При провале валидации срабатывает обычная механика Laravel (редирект назад с `$errors`). Виджеты выводят сообщение под полем в блоке с классом `formster-validation-failed`, а в текстах ошибок поле называется своим локализованным описанием (см. [Локализация](#локализация)).
+
+---
+
+## События
+
+После успешной валидации `ActionHandler::update()` записывает значения в объект и попутно рассылает четыре события. Они лежат в пространстве имён `TTBooking\Formster\Events` и являются обычными событиями Laravel — подписаться можно через `Event::listen()`, автообнаруживаемый класс-слушатель или подписчика событий.
+
+| Событие            | Когда срабатывает                                       | Полезная нагрузка                                         |
+| ------------------ | ------------------------------------------------------- | --------------------------------------------------------- |
+| `ObjectChanging`   | до записи в объект                                      | `$object`, `$aura`                                        |
+| `PropertyChanging` | до записи очередного свойства                           | `$object`, `$aura`, `$property`, `$oldValue`              |
+| `PropertyChanged`  | после **фактического** изменения свойства               | `$object`, `$aura`, `$property`, `$oldValue`, `$newValue` |
+| `ObjectChanged`    | после обновления, если изменилось хотя бы одно свойство | `$object`, `$aura`, `$oldValues`, `$newValues`            |
+
+- `$aura` — это `FinalAura` объекта, `$property` — записываемое `FinalAuraProperty`. Массивы `$oldValues` / `$newValues` проиндексированы именами свойств и содержат только те, что действительно изменились.
+- События `...Changing` **прерывающие**: слушатель, вернувший `false`, отменяет запись — для `PropertyChanging` пропускается одно свойство, для `ObjectChanging` отменяется всё обновление, и объект возвращается нетронутым.
+- События `...Changed` реализуют `ShouldDispatchAfterCommit`, поэтому внутри транзакции рассылаются только после успешного коммита.
+- Сообщается только о **реальных** изменениях: старое и новое значения сравниваются нестрого (`==`). Объект-значение может задать своё правило, реализовав `TTBooking\Formster\Contracts\Comparable` (единственный метод `sameAs()`) — встроенные псевдотипы `Color`, `DateTimeZone` и `File` (а значит, и `Image`) так и делают.
+
+> События срабатывают в момент записи значений в объект, то есть **до** `->save()`. Слушатели `...Changed` видят объект уже изменённым — поэтому `ObjectChanged` удобен для журнала аудита; слушатель `ObjectChanging` видит объект ещё нетронутым.
+
+```php
+use Illuminate\Support\Facades\Event;
+use TTBooking\Formster\Events\ObjectChanged;
+use TTBooking\Formster\Events\PropertyChanging;
+
+Event::listen(function (ObjectChanged $event) {
+    activity()->performedOn($event->object)
+        ->withProperties(['old' => $event->oldValues, 'new' => $event->newValues])
+        ->log('updated');
+});
+
+// Защитить свойство от перезаписи: вернуть false
+Event::listen(static fn (PropertyChanging $event) => $event->property->variableName === 'email' ? false : null);
+```
+
+У обработчика собственный диспетчер событий (он подключается автоматически при загрузке пакета), поэтому события можно приглушить на один вызов или отключить совсем:
+
+```php
+use TTBooking\Formster\Facades\ActionHandler;
+
+// Разовое обновление без событий
+ActionHandler::withoutEvents(static fn () => ActionHandler::update($request, $model)->save());
+
+// Или глобально, например в тесте
+ActionHandler::unsetEventDispatcher();
+```
+
+`withoutEvents()`, `getEventDispatcher()`, `setEventDispatcher()` и `unsetEventDispatcher()` — статические методы класса `TTBooking\Formster\ActionHandler` (трейт `HasEvents`), доступные и через фасад.
 
 ---
 
@@ -494,9 +592,9 @@ File::generateStorableNamesNormally();
 
 > Если среди свойств есть файл или изображение — в том числе поля, объявленные как `list<File>`, — форма автоматически получает `enctype="multipart/form-data"`.
 
-### Компоненты-виджеты (анонимные)
+### Компоненты-виджеты
 
-Каждый виджет можно вызвать и напрямую: `form.text`, `form.number`, `form.decimal`, `form.checkbox`, `form.radio`, `form.select`, `form.datetime`, `form.color`, `form.timezone`, `form.file`, `form.image`, `form.disclaimer`.
+Каждый виджет можно вызвать и напрямую: `form.text`, `form.number`, `form.decimal`, `form.checkbox`, `form.radio`, `form.select`, `form.datetime`, `form.date`, `form.time`, `form.color`, `form.timezone`, `form.model`, `form.file`, `form.image`, `form.html`, `form.disclaimer`. Большинство из них — анонимные компоненты; `form.timezone` и `form.model` реализованы классами: они сами собирают список вариантов.
 
 ```blade
 <x-formster::form.text :property="$property" />
@@ -578,16 +676,17 @@ FORMSTER_ENFORCE_POLICIES=true
 
 Файл `lang/vendor/formster/{locale}/form.php`:
 
-| Ключ                             | RU                           |
-| -------------------------------- | ---------------------------- |
-| `description`                    | Параметр                     |
-| `value`                          | Значение                     |
-| `default`                        | По умолч.                    |
-| `na`                             | н/д                          |
-| `null`                           | NULL                         |
-| `on` / `off`                     | ✔️ / ❌                      |
-| `open` / `download` / `uploaded` | открыть / скачать / загружен |
-| `save`                           | Сохранить                    |
+| Ключ                             | RU                              |
+| -------------------------------- | ------------------------------- |
+| `description`                    | Параметр                        |
+| `value`                          | Значение                        |
+| `default`                        | По умолч.                       |
+| `na`                             | н/д                             |
+| `null`                           | не указано                      |
+| `unsupported`                    | Тип свойства не поддерживается. |
+| `on` / `off`                     | ✔️ / ❌                          |
+| `open` / `download` / `uploaded` | открыть / скачать / загружен    |
+| `save`                           | Сохранить                       |
 
 ### Описания свойств и вариантов перечислений
 
@@ -660,9 +759,11 @@ return [
         TTBooking\Formster\Handlers\EnumHandler::class,
         TTBooking\Formster\Handlers\DateTimeHandler::class,
         TTBooking\Formster\Handlers\DateTimeZoneHandler::class,
+        TTBooking\Formster\Handlers\RelatedModelHandler::class,
         TTBooking\Formster\Handlers\ColorHandler::class,
         TTBooking\Formster\Handlers\ImageHandler::class,
         TTBooking\Formster\Handlers\FileHandler::class,
+        TTBooking\Formster\Handlers\HtmlableHandler::class,
     ],
 
     // Строгий режим политик:
@@ -794,6 +895,25 @@ $aura = PropertyParser::parse(App\Models\User::class);
 foreach ($aura->properties as $property) {
     echo $property->variableName.': '.$property->type.PHP_EOL;
 }
+```
+
+Дополнительно `ActionHandler` предоставляет статические методы для работы с диспетчером событий: `getEventDispatcher()`, `setEventDispatcher()`, `unsetEventDispatcher()` и `withoutEvents()` — см. [События](#события).
+
+### Расширение обработчика действий
+
+`ActionHandler::update()` разбит на четыре защищённых шага, поэтому наследник может заменить любой из них, не переписывая остальные:
+
+| Метод                                                  | Назначение                                                                |
+| ------------------------------------------------------ | ------------------------------------------------------------------------- |
+| `parseObject($object)`                                 | разобрать объект и финализировать его ауру                                |
+| `getWritableProperties($object, $aura)`                | оставить доступные для записи свойства, разрешённые текущему пользователю |
+| `validateRequest($request, $object, $properties)`      | собрать правила и локализованные названия полей, провести валидацию       |
+| `performUpdate($request, $object, $aura, $properties)` | разослать события и записать значения через обработчики                   |
+
+Чтобы фасад подхватил вашу реализацию, переопределите биндинг контейнера `action-handler` (контракт `TTBooking\Formster\Contracts\ActionHandler` — его алиас):
+
+```php
+$this->app->singleton('action-handler', MyActionHandler::class);
 ```
 
 ---

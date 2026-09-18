@@ -38,6 +38,7 @@ Route::put('/orders/{order}', function (Request $request, Order $order) {
 - [Property handlers](#property-handlers)
 - [Supported types and widgets](#supported-types-and-widgets)
 - [Validation](#validation)
+- [Events](#events)
 - [Pseudotypes and casts](#pseudotypes-and-casts)
   - [Color](#color)
   - [DateTimeZone](#datetimezone)
@@ -61,8 +62,9 @@ Route::put('/orders/{order}', function (Request $request, Order $order) {
 - 🚀 **Templateless forms.** Declare a model — Formster builds an editable form or a read-only table for it.
 - 🧠 **Multiple metadata sources.** Properties are extracted from PHPDoc (`@property`), native PHP types (reflection), and the `#[Aura]` / `#[AuraProperty]` PHP attributes. Sources can be combined.
 - 🧩 **Rich type system.** Support for union (`A|B`), intersection (`A&B`), nullable, generics (`Collection<int, User>`, `list<File>`, `class-string<User>`), and recursive parsing of nested classes.
-- 🎛️ **Ready-made widgets** for strings, integers, floats, booleans, enums, dates, time zones, colors, files, and images.
+- 🎛️ **Ready-made widgets** for strings, integers, floats, booleans, enums, dates, time zones, colors, files, images, `belongsTo` relationships, and ready-made HTML.
 - ✅ **Automatic validation.** Every handler contributes default rules for its field; per-property rules are declared in the metadata and merged with the defaults via the `'...'` notation, and error messages are rendered next to the fields.
+- 📣 **Events.** `ObjectChanging` / `PropertyChanging` (cancellable) and `ObjectChanged` / `PropertyChanged` are dispatched while the submission is applied.
 - 🖼️ **File and image pseudotypes** with `Storage` uploads, automatic previews (Intervention Image), and orphaned file cleanup.
 - 🔒 **Laravel Gate integration.** Viewing and editing of every property is governed by policies (`viewPolicy` / `updatePolicy`), with a lenient mode by default and a switchable enforcing mode.
 - 🌍 **Localization** of field labels, descriptions, and enum cases (English and Russian out of the box).
@@ -155,7 +157,7 @@ Route::put('/formster/{model}', function (Request $request, Frankenstein $model)
 })->name('update');
 ```
 
-`ActionHandler::update()` first validates the request (the rules are gathered from each property's handler and metadata, and error messages address fields by their localized descriptions), then walks over the model's writable properties (read-only ones are skipped), applies the appropriate handler to each field, respects access policies, and returns the modified object — all that's left is to call `->save()`.
+`ActionHandler::update()` first validates the request (the rules are gathered from each property's handler and metadata, and error messages address fields by their localized descriptions), then walks over the model's writable properties (read-only ones are skipped), applies the appropriate handler to each field, respects access policies, and returns the modified object — all that's left is to call `->save()`. Along the way it dispatches [events](#events), which let you veto or track individual changes.
 
 ---
 
@@ -315,29 +317,76 @@ interface PropertyHandler
 
 `HandlerFactory::for($property)` iterates over the handlers from the `formster.property_handlers` config and returns the first one whose `satisfies()` returned `true`. If none match, `FallbackHandler` is used.
 
-> Handlers receive the finalized `FinalAuraProperty`. The rules returned by `validationRules()` are applied automatically when the submission is processed — see [Validation](#validation).
+> Handlers receive the finalized `FinalAuraProperty` (the constructor property is `protected`, so subclasses can reuse it). The rules returned by `validationRules()` are applied automatically when the submission is processed — see [Validation](#validation).
+
+A handler for a display-only type returns no rules and leaves `handle()` empty — that is exactly what `HtmlableHandler` does.
 
 ---
 
 ## Supported types and widgets
 
-| Property type         | Handler               | Widget (Blade)               | HTML field                          | Default validation rules       |
-| --------------------- | --------------------- | ---------------------------- | ----------------------------------- | ------------------------------ |
-| `bool`                | `BooleanHandler`      | `form.checkbox`              | `<input type="checkbox">`           | `sometimes\|in:on`             |
-| `int`                 | `IntegerHandler`      | `form.number`                | `<input type="number">`             | `required\|integer`            |
-| `float`               | `FloatHandler`        | `form.decimal`               | `<input type="number" step="0.01">` | `required\|numeric`            |
-| `string`              | `StringHandler`       | `form.text`                  | `<input type="text">`               | `required\|string`             |
-| `BackedEnum`          | `EnumHandler`         | `form.radio` / `form.select` | radio buttons or a dropdown         | `required` + `Rule::enum(...)` |
-| `DateTimeInterface`   | `DateTimeHandler`     | `form.datetime`              | `<input type="datetime-local">`     | `required\|date`               |
-| `DateTimeZone`        | `DateTimeZoneHandler` | `form.timezone`              | `<select>` with time zones          | `required\|timezone`           |
-| `Color`               | `ColorHandler`        | `form.color`                 | `<input type="color">`              | `required\|hex_color`          |
-| `File` / `list<File>` | `FileHandler`         | `form.file`                  | `<input type="file">`               | `required\|file`               |
-| `Image`               | `ImageHandler`        | `form.image`                 | `<input type="file">` + preview     | `required\|image:allow_svg`    |
-| *anything else*       | `FallbackHandler`     | `form.disclaimer`            | an "unsupported type" message       | —                              |
+The table follows the order of `formster.property_handlers`, which is also the order in which `satisfies()` is checked.
 
-**Enum.** `EnumHandler` renders radio buttons (`radio`) when the number of cases does not exceed the `buttonLimit` threshold (default **2**), and a dropdown (`select`) otherwise.
+| Property type             | Handler               | Widget (Blade)                              | HTML field                                         | Default validation rules                         |
+| ------------------------- | --------------------- | ------------------------------------------- | -------------------------------------------------- | ------------------------------------------------ |
+| `bool`                    | `BooleanHandler`      | `form.checkbox`                             | `<input type="checkbox">`                          | `required\|boolean`                              |
+| `int`                     | `IntegerHandler`      | `form.number`                               | `<input type="number">`                            | `required\|integer` (+ `min` / `max`)            |
+| `float`                   | `FloatHandler`        | `form.decimal`                              | `<input type="number" step="0.01">`                | `required\|numeric`                              |
+| `string` / `list<string>` | `StringHandler`       | `form.text`                                 | `<input type="text">` / `<textarea>`               | `present\|nullable\|string`                      |
+| `UnitEnum` / `BackedEnum` | `EnumHandler`         | `form.radio` / `form.select`                | radio buttons or a dropdown                        | `required` + `Rule::enum(...)` / `Rule::in(...)` |
+| `DateTimeInterface`       | `DateTimeHandler`     | `form.datetime` / `form.date` / `form.time` | `<input type="datetime-local">`, `date`, or `time` | `required` + `Rule::date()->format(...)`         |
+| `DateTimeZone`            | `DateTimeZoneHandler` | `form.timezone`                             | `<select>` with time zones                         | `required\|timezone`                             |
+| `Model` (belongs to)      | `RelatedModelHandler` | `form.model`                                | `<select>` with the related records                | `required` + `Rule::exists(...)`                 |
+| `Color`                   | `ColorHandler`        | `form.color`                                | `<input type="color">`                             | `required\|hex_color`                            |
+| `Image`                   | `ImageHandler`        | `form.image`                                | `<input type="file">` + preview                    | `image:allow_svg`                                |
+| `File` / `list<File>`     | `FileHandler`         | `form.file`                                 | `<input type="file">`                              | `file`                                           |
+| `Htmlable`                | `HtmlableHandler`     | `form.html`                                 | ready-made HTML (read-only)                        | —                                                |
+| *anything else*           | `FallbackHandler`     | `form.disclaimer`                           | an "unsupported type" message                      | —                                                |
+
+**Nullable properties.** For a nullable type (`?Status`, `Status|null`) the handler swaps `required` for `present|nullable`, so the field may be left empty — this is how `EnumHandler`, `DateTimeHandler`, and `RelatedModelHandler` behave. The enum and relationship widgets additionally offer an explicit "not specified" option.
+
+**Enum.** `EnumHandler` renders radio buttons (`radio`) when the number of cases (plus the "not specified" option for a nullable property) does not exceed the `buttonLimit` threshold (default **2**), and a dropdown (`select`) otherwise.
+
+Both backed and **pure (non-backed) enumerations** are supported: a backed one is validated with `Rule::enum()` and resolved via `from()`, a pure one is validated against the list of case names (`Rule::in()`) and resolved via `constant()`.
 
 Enum case descriptions are localized (see [Localization](#localization)); if no translation is found, the case's PHPDoc comment or its "humanized" name is used.
+
+**Type aliases.** The scalar handlers also match the usual PHPDoc aliases: `boolean` for `bool`, `integer` for `int`, `double` / `real` for `float`, and `non-empty-string` / `class-string` / `Stringable` for `string`.
+
+**Integer.** Bounds are picked up from the type itself — `int<1, 100>`, `positive-int`, `negative-int`, `non-positive-int`, `non-negative-int` — and turn into `min` / `max` rules and the matching attributes of `<input type="number">`.
+
+**Date and time.** The widget is chosen by a type parameter — a case of the `TTBooking\Formster\Enums\TemporalComponent` enum, spelled out in full (const expressions in annotations are not resolved through `use` imports):
+
+```php
+/**
+ * Date and time, <input type="datetime-local"> (default):
+ * @property \DateTimeInterface $starts_at
+ *
+ * Date only, <input type="date">:
+ * @property \DateTimeInterface<\TTBooking\Formster\Enums\TemporalComponent::Date> $birthday
+ *
+ * Time only, <input type="time">:
+ * @property \DateTimeInterface<\TTBooking\Formster\Enums\TemporalComponent::Time> $opens_at
+ */
+```
+
+The value is validated and parsed with the format of the chosen variant (`Y-m-d`, `H:i`, `Y-m-d\TH:i`).
+
+**Model relationships.** `RelatedModelHandler` takes over any property typed with an Eloquent model class. The property name must match a `belongsTo` relationship method on the model: the widget lists the related records, and on submission the selected key is passed to `$relationship->associate()`. For a nullable relationship the "not specified" option clears it.
+
+The dropdown is configured with type parameters — `Model<TTitleColumn, TScope, TScopeParameters>`:
+
+```php
+/**
+ * Options are titled by the "name" column (default):
+ * @property \App\Models\Manager $manager
+ *
+ * Options are titled by "email" and limited to the "active" query scope:
+ * @property \App\Models\User<"email", "active">|null $owner
+ */
+```
+
+**Htmlable.** A property typed as `Illuminate\Contracts\Support\Htmlable` is rendered as is (`toHtml()`) both in the form and in the table. The widget is display-only: it contributes no validation rules and writes nothing back — handy for computed columns, badges, or links assembled by the model itself.
 
 ---
 
@@ -361,6 +410,55 @@ class Frankenstein extends Model {}
 ```
 
 On failure the usual Laravel mechanics kick in (redirect back with `$errors`). The widgets render the message below the field in a `formster-validation-failed` block, and error messages address the field by its localized description (see [Localization](#localization)).
+
+---
+
+## Events
+
+Once the request has been validated, `ActionHandler::update()` writes the values into the object and dispatches four events along the way. They live in the `TTBooking\Formster\Events` namespace and are ordinary Laravel events — subscribe with `Event::listen()`, an auto-discovered listener class, or an event subscriber.
+
+| Event              | When it fires                                      | Payload                                                   |
+| ------------------ | -------------------------------------------------- | --------------------------------------------------------- |
+| `ObjectChanging`   | before anything is written to the object           | `$object`, `$aura`                                        |
+| `PropertyChanging` | before a single property is written                | `$object`, `$aura`, `$property`, `$oldValue`              |
+| `PropertyChanged`  | after a property has **actually** changed          | `$object`, `$aura`, `$property`, `$oldValue`, `$newValue` |
+| `ObjectChanged`    | after the update, if at least one property changed | `$object`, `$aura`, `$oldValues`, `$newValues`            |
+
+- `$aura` is the object's `FinalAura`, `$property` is the `FinalAuraProperty` being written. `$oldValues` / `$newValues` are keyed by property name and contain only the properties that actually changed.
+- The `...Changing` events are **halting**: a listener returning `false` cancels the write — `PropertyChanging` skips that single property, `ObjectChanging` aborts the whole update and the object is returned untouched.
+- The `...Changed` events implement `ShouldDispatchAfterCommit`, so inside a transaction they are dispatched only after a successful commit.
+- Only **real** changes are reported: the old and the new value are compared loosely (`==`). A value object can define its own rule by implementing `TTBooking\Formster\Contracts\Comparable` (a single `sameAs()` method) — the bundled `Color`, `DateTimeZone`, and `File` (hence `Image` too) pseudotypes already do.
+
+> The events fire while the values are written to the object, i.e. **before** `->save()`. The `...Changed` listeners therefore see the object already modified, which makes `ObjectChanged` a convenient place to write an audit log; an `ObjectChanging` listener still sees it untouched.
+
+```php
+use Illuminate\Support\Facades\Event;
+use TTBooking\Formster\Events\ObjectChanged;
+use TTBooking\Formster\Events\PropertyChanging;
+
+Event::listen(function (ObjectChanged $event) {
+    activity()->performedOn($event->object)
+        ->withProperties(['old' => $event->oldValues, 'new' => $event->newValues])
+        ->log('updated');
+});
+
+// Protect a property from being overwritten: return false
+Event::listen(static fn (PropertyChanging $event) => $event->property->variableName === 'email' ? false : null);
+```
+
+The handler keeps its own event dispatcher (it is bound automatically when the package boots), so events can be muted for a single call or switched off entirely:
+
+```php
+use TTBooking\Formster\Facades\ActionHandler;
+
+// A one-off update without events
+ActionHandler::withoutEvents(static fn () => ActionHandler::update($request, $model)->save());
+
+// Or globally, e.g. in a test
+ActionHandler::unsetEventDispatcher();
+```
+
+`withoutEvents()`, `getEventDispatcher()`, `setEventDispatcher()`, and `unsetEventDispatcher()` are static methods of the `TTBooking\Formster\ActionHandler` class (the `HasEvents` trait), also reachable through the facade.
 
 ---
 
@@ -494,9 +592,9 @@ All components are available under the `formster::` namespace.
 
 > If any of the properties is a file or an image — including fields declared as `list<File>` — the form automatically gets `enctype="multipart/form-data"`.
 
-### Widget components (anonymous)
+### Widget components
 
-Each widget can also be called directly: `form.text`, `form.number`, `form.decimal`, `form.checkbox`, `form.radio`, `form.select`, `form.datetime`, `form.color`, `form.timezone`, `form.file`, `form.image`, `form.disclaimer`.
+Each widget can also be called directly: `form.text`, `form.number`, `form.decimal`, `form.checkbox`, `form.radio`, `form.select`, `form.datetime`, `form.date`, `form.time`, `form.color`, `form.timezone`, `form.model`, `form.file`, `form.image`, `form.html`, `form.disclaimer`. Most of them are anonymous components; `form.timezone` and `form.model` are class-based — they assemble the list of options themselves.
 
 ```blade
 <x-formster::form.text :property="$property" />
@@ -584,7 +682,8 @@ The `lang/vendor/formster/{locale}/form.php` file:
 | `value`                          | Value                      |
 | `default`                        | Default                    |
 | `na`                             | N/A                        |
-| `null`                           | NULL                       |
+| `null`                           | not specified              |
+| `unsupported`                    | Property type unsupported. |
 | `on` / `off`                     | ✔️ / ❌                    |
 | `open` / `download` / `uploaded` | open / download / uploaded |
 | `save`                           | Save                       |
@@ -660,9 +759,11 @@ return [
         TTBooking\Formster\Handlers\EnumHandler::class,
         TTBooking\Formster\Handlers\DateTimeHandler::class,
         TTBooking\Formster\Handlers\DateTimeZoneHandler::class,
+        TTBooking\Formster\Handlers\RelatedModelHandler::class,
         TTBooking\Formster\Handlers\ColorHandler::class,
         TTBooking\Formster\Handlers\ImageHandler::class,
         TTBooking\Formster\Handlers\FileHandler::class,
+        TTBooking\Formster\Handlers\HtmlableHandler::class,
     ],
 
     // Policy enforcement:
@@ -794,6 +895,25 @@ $aura = PropertyParser::parse(App\Models\User::class);
 foreach ($aura->properties as $property) {
     echo $property->variableName.': '.$property->type.PHP_EOL;
 }
+```
+
+`ActionHandler` additionally exposes the static event-dispatcher helpers `getEventDispatcher()`, `setEventDispatcher()`, `unsetEventDispatcher()`, and `withoutEvents()` — see [Events](#events).
+
+### Extending the action handler
+
+`ActionHandler::update()` is split into four protected steps, so a subclass can replace any of them without rewriting the rest:
+
+| Method                                                 | Responsibility                                                          |
+| ------------------------------------------------------ | ----------------------------------------------------------------------- |
+| `parseObject($object)`                                 | parse the object and finalize its aura                                  |
+| `getWritableProperties($object, $aura)`                | keep the writable properties the current user is allowed to update      |
+| `validateRequest($request, $object, $properties)`      | collect the rules and the localized attribute names, run the validation |
+| `performUpdate($request, $object, $aura, $properties)` | dispatch the events and write the values through the handlers           |
+
+Rebind the `action-handler` container key (the `TTBooking\Formster\Contracts\ActionHandler` contract is an alias for it) to have the facade pick your implementation up:
+
+```php
+$this->app->singleton('action-handler', MyActionHandler::class);
 ```
 
 ---
