@@ -22,6 +22,9 @@
         "Mark models with the #[Aura] attribute or define policies; otherwise the Gate denies access and the form renders empty",
         "Render an editable form with <x-formster::form :object=\"$model\" action=\"...\"/> and a read-only table with <x-formster::form.table :object=\"$model\"/>",
         "Handle form submissions with ActionHandler::update($request, $object)->save()",
-        "Requires PHP 8.2+ and Laravel 12.17+"
+        "A nullable property type replaces the required rule with present|nullable and adds a \"not specified\" option to the enum and relationship dropdowns",
+        "Type a property with a related model class and give the model a matching belongsTo method to get a dropdown of related records",
+        "Track or veto updates with the ObjectChanging / PropertyChanging / PropertyChanged / ObjectChanged events; returning false from a ...Changing listener cancels the write",
+        "Requires PHP 8.2+ and Laravel 12.17+ or 13.x"
     ]
 }
