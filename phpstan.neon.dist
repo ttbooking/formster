@@ -28,6 +28,8 @@ parameters:
 
     level: max
 
+    treatPhpDocTypesAsCertain: false
+
     ignoreErrors:
         -
             identifier: larastan.noEnvCallsOutsideOfConfig

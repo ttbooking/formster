@@ -44,7 +44,6 @@ class AsColor implements CastsAttributes
             return null;
         }
 
-        /** @phpstan-ignore instanceof.alwaysTrue */
         if (! $value instanceof Color) {
             throw new TypeError(sprintf(
                 'Cannot assign %s to property %s::$%s of type %s',

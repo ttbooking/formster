@@ -47,7 +47,6 @@ class AsDateTimeZone implements CastsAttributes
             return null;
         }
 
-        /** @phpstan-ignore instanceof.alwaysTrue */
         if (! $value instanceof \DateTimeZone) {
             throw new TypeError(sprintf(
                 'Cannot assign %s to property %s::$%s of type %s',
