@@ -6,20 +6,21 @@ namespace TTBooking\Formster\Parsers;
 
 use ArgumentCountError;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Collection as IlluminateCollection;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use phpDocumentor\Reflection\DocBlock\Tags\Property;
 use phpDocumentor\Reflection\DocBlock\Tags\PropertyRead;
 use phpDocumentor\Reflection\DocBlock\Tags\PropertyWrite;
 use phpDocumentor\Reflection\DocBlockFactory;
+use phpDocumentor\Reflection\PseudoTypes\ClassString;
+use phpDocumentor\Reflection\PseudoTypes\Generic;
 use phpDocumentor\Reflection\Type;
 use phpDocumentor\Reflection\Types\AbstractList;
-use phpDocumentor\Reflection\Types\ClassString;
-use phpDocumentor\Reflection\Types\Collection;
 use phpDocumentor\Reflection\Types\Compound;
 use phpDocumentor\Reflection\Types\ContextFactory;
 use phpDocumentor\Reflection\Types\Intersection;
 use phpDocumentor\Reflection\Types\Nullable;
+use phpDocumentor\Reflection\Types\Object_;
 use ReflectionClass;
 use Throwable;
 use TTBooking\Formster\Concerns\PerformsHigherOrderCalls;
@@ -58,7 +59,7 @@ class PhpDocParser implements HigherOrderAware, PropertyParser
             $defaultObject = $refClass->newInstanceWithoutConstructor();
         }
 
-        /** @var IlluminateCollection<int, Property|PropertyRead|PropertyWrite> $tags */
+        /** @var Collection<int, Property|PropertyRead|PropertyWrite> $tags */
         $tags = collect(['property', 'property-read', 'property-write'])->flatMap($docblock->getTagsByName(...));
 
         $props = $tags->map(function (Property|PropertyRead|PropertyWrite $property) use ($defaultObject) {
@@ -92,11 +93,16 @@ class PhpDocParser implements HigherOrderAware, PropertyParser
             $type instanceof Intersection => new AuraIntersectionType($this->parseTypes(iterator_to_array($type, false))),
             $type instanceof ClassString => new AuraNamedType(
                 'class-string',
-                (null !== $fqsen = $type->getFqsen()) ? [new AuraNamedType((string) $fqsen)] : []
+                (null !== $genericType = $type->getGenericType()) ? [
+                    new AuraNamedType($genericType instanceof Object_
+                        ? (string) $genericType->getFqsen()
+                        : (string) $genericType
+                    ),
+                ] : []
             ),
-            $type instanceof Collection => new AuraNamedType(
+            $type instanceof Generic => new AuraNamedType(
                 (string) ($type->getFqsen() ?? 'object'),
-                $this->parseTypes([$type->getKeyType(), $type->getValueType()]),
+                $this->parseTypes($type->getTypes()),
             ),
             $type instanceof AbstractList => new AuraNamedType(
                 Str::kebab(rtrim($type::class, '_')),
@@ -107,12 +113,12 @@ class PhpDocParser implements HigherOrderAware, PropertyParser
     }
 
     /**
-     * @param  list<Type>  $types
+     * @param  array<Type>  $types
      * @return list<AuraType>
      */
     protected function parseTypes(array $types): array
     {
-        return array_map(fn (Type $type) => $this->parseType($type), $types);
+        return array_map($this->parseType(...), array_values($types));
     }
 
     /**
