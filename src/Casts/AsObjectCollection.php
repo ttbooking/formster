@@ -47,7 +47,7 @@ class AsObjectCollection implements CastsAttributes
         return collect($value)->map(
             is_subclass_of($this->class, Mappable::class)
                 ? $this->class::fromArray(...)
-                : fn ($item) => new $this->class(...$item)
+                : fn (array $item) => new $this->class(...$item)
         );
     }
 
