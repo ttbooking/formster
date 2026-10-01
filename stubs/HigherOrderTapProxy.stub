@@ -1,5 +1,0 @@
-<?php
-
-namespace Pest\Support;
-
-final class HigherOrderTapProxy {}

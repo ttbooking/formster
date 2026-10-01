@@ -1,5 +1,5 @@
 <?php
 
 test('example', function () {
-    expect(true)->toBeTrue();
+    expect(true)->toBeTrue(); // @phpstan-ignore pest.expectation.redundant
 });

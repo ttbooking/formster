@@ -15,7 +15,7 @@ beforeEach(function () {
 });
 
 test('example', function () {
-    expect($this->aura)->toBeInstanceOf(Aura::class)
+    expect($this->aura)->toBeInstanceOf(Aura::class) // @phpstan-ignore pest.expectation.redundant
         ->and($this->aura->summary)->toBe('Hello World!')
         ->and($this->aura->description)->toBe('This is a description.');
 });

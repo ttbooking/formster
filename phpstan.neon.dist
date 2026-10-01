@@ -2,6 +2,7 @@ includes:
     - vendor/larastan/larastan/extension.neon
     - vendor/nesbot/carbon/extension.neon
     - vendor/pestphp/pest/extension.neon
+    - vendor/pestphp/pest-plugin-phpstan/extension.neon
 
 parameters:
     paths:
@@ -13,15 +14,6 @@ parameters:
         - stubs/Image.php
         - stubs/ImageException.php
         - stubs/ImageFacade.php
-
-    stubFiles:
-        - stubs/AfterEachCall.stub
-        - stubs/BeforeEachCall.stub
-        - stubs/Expectable.stub
-        - stubs/Functions.stub
-        - stubs/HigherOrderTapProxy.stub
-        - stubs/TestCall.stub
-        - stubs/TestCase.stub
 
     configDirectories:
         - config
