@@ -1,15 +1,15 @@
 @use(function TTBooking\Formster\Support\old)
 @use(function TTBooking\Formster\Support\prop_val)
-@use(function TTBooking\Formster\Support\prop_param)
 
 @aware(['object', 'editable'])
 @props(['property'])
+@propParams(['multiline' => false])
 
 @php
     /** @var TTBooking\Formster\Entities\FinalAuraProperty $property */
 @endphp
 
-@php($multiline = $property->type->contains('list<string>') ?: prop_param($property, 0, 'multiline'))
+@php($multiline = $property->type->contains('list<string>') ?: $multiline)
 
 @if (! $object || ! $editable)
     @if ($multiline)

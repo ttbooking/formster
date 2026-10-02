@@ -2,17 +2,13 @@
 @use(function TTBooking\Formster\Support\number_format)
 @use(function TTBooking\Formster\Support\old)
 @use(function TTBooking\Formster\Support\prop_val)
-@use(function TTBooking\Formster\Support\prop_param)
 
 @aware(['object', 'editable'])
 @props(['property'])
+@propParams(['min', 'max', 'step'])
 
 @php
     /** @var TTBooking\Formster\Entities\FinalAuraProperty $property */
-@endphp
-
-@php
-    $step = prop_param($property, 2, 'step');
 @endphp
 
 @if (! $object || ! $editable)

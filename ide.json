@@ -74,6 +74,13 @@
                     "tagNamespace": "formster"
                 }
             ]
-        }
+        },
+        "directives": [
+            {
+                "name": "propParams",
+                "prefix": "<?php return ",
+                "suffix": "; ?>"
+            }
+        ]
     }
 }

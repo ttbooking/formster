@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use TTBooking\Formster\Support\LenientPolicy;
+use TTBooking\Formster\View\PropParamsDirective;
 
 class FormsterServiceProvider extends ServiceProvider // implements DeferrableProvider
 {
@@ -40,6 +41,7 @@ class FormsterServiceProvider extends ServiceProvider // implements DeferrablePr
      */
     public function boot(): void
     {
+        $this->registerBladeDirectives();
         $this->registerResources();
         $this->registerComponents();
         $this->registerEvents();
@@ -48,6 +50,14 @@ class FormsterServiceProvider extends ServiceProvider // implements DeferrablePr
         if ($this->app->runningInConsole()) {
             $this->offerPublishing();
         }
+    }
+
+    /**
+     * Register the Formster Blade directives.
+     */
+    protected function registerBladeDirectives(): void
+    {
+        Blade::directive('propParams', new PropParamsDirective);
     }
 
     /**
