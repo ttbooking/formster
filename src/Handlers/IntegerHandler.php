@@ -9,6 +9,8 @@ use TTBooking\Formster\Concerns\AssertsPropertyTypes;
 use TTBooking\Formster\Contracts\PropertyHandler;
 use TTBooking\Formster\Entities\FinalAuraProperty;
 
+use function TTBooking\Formster\Support\prop_param;
+
 class IntegerHandler implements PropertyHandler
 {
     use AssertsPropertyTypes;
@@ -47,16 +49,32 @@ class IntegerHandler implements PropertyHandler
      */
     public function getBounds(): array
     {
+        /** @var array{int|null, int|null} $bounds */
+        $bounds = [
+            prop_param($this->property, 0, 'min'),
+            prop_param($this->property, 1, 'max'),
+        ];
+
         /** @var array{int|null, int|null} */
         return match ($this->namedType()->name) {
-            'positive-int' => [1, null],
-            'negative-int' => [null, -1],
-            'non-positive-int' => [null, 0],
-            'non-negative-int' => [0, null],
-            default => [
-                $this->namedType()->atomicParameters()->get(0)?->asConstExpr(),
-                $this->namedType()->atomicParameters()->get(1)?->asConstExpr(),
-            ],
+            'positive-int' => static::mergeBounds([1, null], $bounds),
+            'negative-int' => static::mergeBounds([null, -1], $bounds),
+            'non-positive-int' => static::mergeBounds([null, 0], $bounds),
+            'non-negative-int' => static::mergeBounds([0, null], $bounds),
+            default => $bounds,
         };
+    }
+
+    /**
+     * @param  array{int|null, int|null}  $bounds1
+     * @param  array{int|null, int|null}  $bounds2
+     * @return array{int|null, int|null}
+     */
+    protected static function mergeBounds(array $bounds1, array $bounds2): array
+    {
+        return [
+            ($bounds1[0] ?? PHP_INT_MIN) < ($bounds2[0] ?? PHP_INT_MIN) ? $bounds2[0] : $bounds1[0],
+            ($bounds1[1] ?? PHP_INT_MAX) > ($bounds2[1] ?? PHP_INT_MAX) ? $bounds2[1] : $bounds1[1],
+        ];
     }
 }
