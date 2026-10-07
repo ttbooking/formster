@@ -9,6 +9,9 @@
 
 @php
     /** @var TTBooking\Formster\Entities\FinalAuraProperty $property */
+    /** @var int|null $min */
+    /** @var int|null $max */
+    /** @var int|null $step */
 @endphp
 
 @if (! $object || ! $editable)

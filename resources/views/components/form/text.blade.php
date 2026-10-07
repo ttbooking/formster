@@ -7,6 +7,7 @@
 
 @php
     /** @var TTBooking\Formster\Entities\FinalAuraProperty $property */
+    /** @var bool|int $multiline */
 @endphp
 
 @php($multiline = $property->type->contains('list<string>') ?: $multiline)
@@ -32,6 +33,7 @@
         @if (is_int($multiline))
         rows="{{ $multiline }}"
         @endif
+        @readonly(! $property->writable)
     >{{
         $attributes->get('value') ?? old($attributes->get('name', $property->variableName), implode("\n", (array) $object->{$property->variableName}))
     }}</textarea>
