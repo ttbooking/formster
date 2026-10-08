@@ -10,9 +10,11 @@ use Closure;
 use Countable;
 use Generator;
 use Illuminate\Contracts\Support\Arrayable;
+use Illuminate\Contracts\Support\Jsonable;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use IteratorAggregate;
+use JsonSerializable;
 use Stringable;
 
 /**
@@ -20,7 +22,7 @@ use Stringable;
  * @implements ArrayAccess<string, string>
  * @implements IteratorAggregate<string, string>
  */
-final readonly class Trans implements Arrayable, ArrayAccess, Countable, IteratorAggregate, Stringable
+final readonly class Trans implements Arrayable, ArrayAccess, Countable, IteratorAggregate, Jsonable, JsonSerializable, Stringable
 {
     /** @var array<string, string> */
     private array $messages;
@@ -43,9 +45,25 @@ final readonly class Trans implements Arrayable, ArrayAccess, Countable, Iterato
         return implode("\n", $this->messages);
     }
 
+    /**
+     * @return array<string, string>
+     */
     public function toArray(): array
     {
         return $this->messages;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function jsonSerialize(): array
+    {
+        return $this->toArray();
+    }
+
+    public function toJson($options = 0): string|false
+    {
+        return json_encode($this->jsonSerialize(), $options);
     }
 
     public function getIterator(): Generator
