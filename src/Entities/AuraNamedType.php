@@ -27,7 +27,19 @@ readonly class AuraNamedType extends AuraType
 
     public function contains(string $type): bool
     {
-        return is_a($this->name, $type, true) || $type === $this->name || $type === (string) $this;
+        $parameters = [];
+        if (str_contains($type, '<')) {
+            $pattern = '/(?:([\w\\\]+)\s*<|\G,)\s*((?:[^<>,]+|<(?:[^<>]+|(?R))*>)*)/';
+            preg_match_all($pattern, $type, $matches);
+            $type = $matches[1][0] ?? '';
+            $parameters = $matches[2] ?? [];
+        }
+
+        return $this->parameters->reduce(
+            static fn (bool $passes, AuraType $parameter, int $index) => $passes
+                && (! isset($parameters[$index]) || $parameter->contains(trim($parameters[$index]))),
+            is_a($this->name, $type, true) || $type === $this->name
+        );
     }
 
     /**
