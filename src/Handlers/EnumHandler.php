@@ -39,13 +39,13 @@ class EnumHandler implements PropertyHandler
             default => throw new UnexpectedValueException("Enumeration expected, {$this->namedType()} given."),
         };
 
-        /** @var list<UnitEnum>|null $include */
-        $include = $property->meta['include'] ?? $property->meta['only'] ?? null;
+        /** @var list<UnitEnum> $include */
+        $include = value($property->meta['include'] ?? $property->meta['only'] ?? $this->enumClass::cases());
         /** @var list<UnitEnum> $exclude */
-        $exclude = $property->meta['exclude'] ?? $property->meta['except'] ?? [];
+        $exclude = value($property->meta['exclude'] ?? $property->meta['except'] ?? []);
 
-        $this->enumCases = collect($this->enumClass::cases())->filter(
-            static fn (UnitEnum $case) => (is_null($include) || in_array($case, $include, true)) && ! in_array($case, $exclude, true)
+        $this->enumCases = collect($include)->filter(
+            fn (UnitEnum $case) => in_array($case, $this->enumClass::cases(), true) && ! in_array($case, $exclude, true)
         );
 
         $this->backedBy = is_subclass_of($this->enumClass, BackedEnum::class)
