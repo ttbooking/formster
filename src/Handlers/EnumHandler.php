@@ -12,13 +12,34 @@ use ReflectionEnum;
 use TTBooking\Formster\Concerns\AssertsPropertyTypes;
 use TTBooking\Formster\Contracts\PropertyHandler;
 use TTBooking\Formster\Entities\FinalAuraProperty;
+use UnexpectedValueException;
 use UnitEnum;
 
 class EnumHandler implements PropertyHandler
 {
     use AssertsPropertyTypes;
 
-    public function __construct(protected FinalAuraProperty $property, protected int $buttonLimit = 2) {}
+    public readonly bool $multiple;
+
+    /** @var class-string<UnitEnum> */
+    public readonly string $enumClass;
+
+    /** @var string|null */
+    public readonly ?string $backedBy;
+
+    public function __construct(protected FinalAuraProperty $property, protected int $buttonLimit = 2)
+    {
+        $this->multiple = is_a($this->namedType()->name, Collection::class, true);
+
+        $this->enumClass = match (true) {
+            is_subclass_of($this->namedType()->name, UnitEnum::class) => $this->namedType()->name,
+            is_subclass_of($enumClass = $this->namedType()->atomicParameters()->get(1)->name ?? '', UnitEnum::class) => $enumClass,
+            default => throw new UnexpectedValueException("Enumeration expected, {$this->namedType()} given."),
+        };
+
+        $this->backedBy = is_subclass_of($this->enumClass, BackedEnum::class)
+            ? (new ReflectionEnum($this->enumClass))->getBackingType()?->getName() : null;
+    }
 
     public static function satisfies(FinalAuraProperty $property): bool
     {
@@ -29,23 +50,19 @@ class EnumHandler implements PropertyHandler
 
     public function component(): string
     {
-        $enumClass = $this->extractEnumClass();
-
-        return count($enumClass::cases()) + $this->property->type->nullable > $this->buttonLimit
+        return count($this->enumClass::cases()) + $this->property->type->nullable > $this->buttonLimit
             ? 'formster::form.select'
             : 'formster::form.radio';
     }
 
     public function validationRules(): string|array
     {
-        $enumClass = $this->extractEnumClass();
-
         return $this->property->mergeValidationRules([
             ...($this->property->type->nullable ? ['present', 'nullable'] : ['required']),
-            $this->namedType()->name === Collection::class ? 'list' : (
-                is_subclass_of($enumClass, BackedEnum::class)
-                    ? Rule::enum($enumClass)
-                    : Rule::in(array_column($enumClass::cases(), 'name'))
+            $this->multiple ? 'list' : (
+                $this->backedBy
+                    ? Rule::enum($this->enumClass)
+                    : Rule::in(array_column($this->enumClass::cases(), 'name'))
             ),
         ]);
     }
@@ -58,43 +75,31 @@ class EnumHandler implements PropertyHandler
             return;
         }
 
-        $enumClass = $this->extractEnumClass();
-
-        $backedBy = is_subclass_of($enumClass, BackedEnum::class)
-            ? (new ReflectionEnum($enumClass))->getBackingType()?->getName() : null;
-
-        if ($this->namedType()->name === Collection::class) {
+        if ($this->multiple) {
             $object->{$this->property->variableName} = $request
                 ->collect($this->property->variableName)
-                // @phpstan-ignore argument.type
-                ->map(static fn (int|string $value) => match ($backedBy) {
-                    'int' => $enumClass::from((int) $value),
-                    'string' => $enumClass::from((string) $value),
-                    default => constant($enumClass.'::'.$value),
-                });
-
-            return;
+                ->map($this->newEnum(...)); // @phpstan-ignore argument.type
+        } else {
+            $object->{$this->property->variableName} = $this->newEnum(
+                $this->backedBy === 'int'
+                    ? $request->integer($this->property->variableName)
+                    : (string) $request->string($this->property->variableName)
+            );
         }
-
-        $object->{$this->property->variableName} = match ($backedBy) {
-            'int' => $enumClass::from($request->integer($this->property->variableName)),
-            'string' => $enumClass::from((string) $request->string($this->property->variableName)),
-            default => constant($enumClass.'::'.$request->string($this->property->variableName)),
-        };
     }
 
-    /**
-     * @return class-string<UnitEnum>
-     */
-    public function extractEnumClass(): string
+    protected function newEnum(string|int $value): UnitEnum
     {
-        $type = $this->namedType();
+        if (is_subclass_of($this->enumClass, BackedEnum::class)) {
+            /** @var BackedEnum */
+            return match ($this->backedBy) {
+                'int' => $this->enumClass::from((int) $value),
+                'string' => $this->enumClass::from((string) $value),
+                default => constant($this->enumClass.'::'.$value),
+            };
+        }
 
-        /** @var class-string<UnitEnum> */
-        return match (true) {
-            is_subclass_of($type->name, UnitEnum::class) => $type->name,
-            is_subclass_of($enumClass = $type->atomicParameters()->get(1)->name ?? '', UnitEnum::class) => $enumClass,
-            default => '',
-        };
+        /** @var UnitEnum */
+        return constant($this->enumClass.'::'.$value);
     }
 }
