@@ -26,7 +26,7 @@
         @if ($property->type->nullable)
             <option value="" @selected(is_null($value ?? old($attributes->get('name', $property->variableName))))>-- {{ __('formster::form.null') }} --</option>
         @endif
-        @foreach ($handler->enumClass::cases() as $case)
+        @foreach ($handler->enumCases as $case)
             @if ($handler->multiple)
                 <option value="{{ enum_value($case) }}" @selected($object->{$property->variableName}->contains($case))>
                     {{ enum_desc($case) }}

@@ -24,6 +24,9 @@ class EnumHandler implements PropertyHandler
     /** @var class-string<UnitEnum> */
     public readonly string $enumClass;
 
+    /** @var Collection<int, UnitEnum> */
+    public readonly Collection $enumCases;
+
     /** @var string|null */
     public readonly ?string $backedBy;
 
@@ -36,6 +39,15 @@ class EnumHandler implements PropertyHandler
             is_subclass_of($enumClass = $this->namedType()->atomicParameters()->get(1)->name ?? '', UnitEnum::class) => $enumClass,
             default => throw new UnexpectedValueException("Enumeration expected, {$this->namedType()} given."),
         };
+
+        /** @var list<UnitEnum>|null $include */
+        $include = $property->meta['include'] ?? $property->meta['only'] ?? null;
+        /** @var list<UnitEnum> $exclude */
+        $exclude = $property->meta['exclude'] ?? $property->meta['except'] ?? [];
+
+        $this->enumCases = collect($this->enumClass::cases())->filter(
+            static fn (UnitEnum $case) => (is_null($include) || in_array($case, $include, true)) && ! in_array($case, $exclude, true)
+        );
 
         $this->backedBy = is_subclass_of($this->enumClass, BackedEnum::class)
             ? (new ReflectionEnum($this->enumClass))->getBackingType()?->getName() : null;
@@ -50,7 +62,7 @@ class EnumHandler implements PropertyHandler
 
     public function component(): string
     {
-        return count($this->enumClass::cases()) + $this->property->type->nullable > $this->buttonLimit
+        return $this->enumCases->count() + $this->property->type->nullable > $this->buttonLimit
             ? 'formster::form.select'
             : 'formster::form.radio';
     }
@@ -62,7 +74,7 @@ class EnumHandler implements PropertyHandler
             $this->multiple ? 'list' : (
                 $this->backedBy
                     ? Rule::enum($this->enumClass)
-                    : Rule::in(array_column($this->enumClass::cases(), 'name'))
+                    : Rule::in(array_column($this->enumCases->all(), 'name'))
             ),
         ]);
     }

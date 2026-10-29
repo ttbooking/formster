@@ -3,10 +3,11 @@
 @use(function TTBooking\Formster\Support\old)
 @use(function TTBooking\Formster\Support\prop_val)
 
-@aware(['object', 'editable'])
+@aware(['object', 'editable', 'handler'])
 @props(['property', 'value' => null])
 
 @php
+    /** @var TTBooking\Formster\Handlers\EnumHandler $handler */
     /** @var TTBooking\Formster\Entities\FinalAuraProperty $property */
 @endphp
 
@@ -25,7 +26,7 @@
                 <i>{{ __('formster::form.null') }}</i>
             </label>
         @endif
-        @foreach ($property->type->name::cases() as $case)
+        @foreach ($handler->enumCases as $case)
             <label>
                 <input
                     {{ $attributes->merge(['name' => $property->variableName])->only('name') }}
