@@ -1,13 +1,13 @@
-@use(TTBooking\Formster\Handlers\IntegerHandler)
 @use(function TTBooking\Formster\Support\number_format)
 @use(function TTBooking\Formster\Support\old)
 @use(function TTBooking\Formster\Support\prop_val)
 
-@aware(['object', 'editable'])
+@aware(['object', 'editable', 'handler'])
 @props(['property'])
 @propParams(['min', 'max', 'step'])
 
 @php
+    /** @var TTBooking\Formster\Handlers\IntegerHandler $handler */
     /** @var TTBooking\Formster\Entities\FinalAuraProperty $property */
     /** @var int|null $min */
     /** @var int|null $max */
@@ -23,7 +23,7 @@
             'value' => old($attributes->get('name', $property->variableName), $object->{$property->variableName}),
         ]) }}
         type="number"
-        @php([$min, $max] = (new IntegerHandler($property))->getBounds())
+        @php([$min, $max] = $handler->getBounds())
         @isset($min)min="{{ $min }}"@endisset
         @isset($max)max="{{ $max }}"@endisset
         @isset($step)step="{{ $step }}"@endisset
