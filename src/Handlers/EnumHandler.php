@@ -69,14 +69,15 @@ class EnumHandler implements PropertyHandler
 
     public function validationRules(): string|array
     {
-        return $this->property->mergeValidationRules([
-            ...($this->property->type->nullable ? ['present', 'nullable'] : ['required']),
-            $this->multiple ? 'list' : (
-                $this->backedBy
-                    ? Rule::enum($this->enumClass)
-                    : Rule::in(array_column($this->enumCases->all(), 'name'))
-            ),
-        ]);
+        $enumRule = $this->backedBy
+            ? Rule::enum($this->enumClass)
+            : Rule::in(array_column($this->enumCases->all(), 'name'));
+
+        return $this->property->mergeValidationRules(match (true) {
+            $this->multiple => ['list'],
+            $this->property->type->nullable => ['present', 'nullable', $enumRule],
+            default => ['required', $enumRule],
+        });
     }
 
     public function handle(object $object, Request $request): void
