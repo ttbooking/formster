@@ -27,7 +27,6 @@ class EnumHandler implements PropertyHandler
     /** @var Collection<int, UnitEnum> */
     public readonly Collection $enumCases;
 
-    /** @var string|null */
     public readonly ?string $backedBy;
 
     public function __construct(protected FinalAuraProperty $property, protected int $buttonLimit = 2)
