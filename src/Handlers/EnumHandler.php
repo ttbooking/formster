@@ -12,12 +12,17 @@ use ReflectionEnum;
 use TTBooking\Formster\Concerns\AssertsPropertyTypes;
 use TTBooking\Formster\Contracts\PropertyHandler;
 use TTBooking\Formster\Entities\FinalAuraProperty;
+use TTBooking\Formster\Enums\EnumRepresentation;
 use UnexpectedValueException;
 use UnitEnum;
+
+use function TTBooking\Formster\Support\prop_param;
 
 class EnumHandler implements PropertyHandler
 {
     use AssertsPropertyTypes;
+
+    protected EnumRepresentation $variant;
 
     public readonly bool $multiple;
 
@@ -31,6 +36,8 @@ class EnumHandler implements PropertyHandler
 
     public function __construct(protected FinalAuraProperty $property, protected int $buttonLimit = 2)
     {
+        $this->variant = prop_param($this->property, 0, 'variant') ?? EnumRepresentation::Auto; // @phpstan-ignore assign.propertyType
+
         $this->multiple = is_a($this->namedType()->name, Collection::class, true);
 
         $this->enumClass = match (true) {
@@ -61,9 +68,13 @@ class EnumHandler implements PropertyHandler
 
     public function component(): string
     {
-        return $this->enumCases->count() + $this->property->type->nullable > $this->buttonLimit
-            ? 'formster::form.select'
-            : 'formster::form.radio';
+        if ($this->variant === EnumRepresentation::Auto) {
+            return $this->enumCases->count() + $this->property->type->nullable > $this->buttonLimit
+                ? 'formster::form.select'
+                : 'formster::form.radio';
+        }
+
+        return $this->variant->component();
     }
 
     public function validationRules(): string|array

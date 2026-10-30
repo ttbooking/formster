@@ -6,8 +6,13 @@ namespace TTBooking\Formster\Enums;
 
 enum TemporalComponent
 {
+    /** Date */
     case Date;
+
+    /** Time */
     case Time;
+
+    /** Date and Time */
     case Both;
 
     public function component(): string
