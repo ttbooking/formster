@@ -12,10 +12,22 @@
 @endphp
 
 @if (! $object || ! $editable)
-    <span {{ $attributes }}>{{ enum_desc(prop_val($property, $object)) }}</span>
+    @if ($handler->multiple)
+        @if (count($selectedCases = prop_val($property, $object)))
+            <span {{ $attributes->except('id') }}>
+                @foreach ($selectedCases as $case)
+                    {{ enum_desc($case) }}<br />
+                @endforeach
+            </span>
+        @else
+            <i {{ $attributes->except('id') }}>{{ __('formster::form.empty') }}</i>
+        @endif
+    @else
+        <span {{ $attributes->except('id') }}>{{ enum_desc(prop_val($property, $object)) }}</span>
+    @endif
 @else
     <fieldset {{ $attributes->except('name') }} @disabled(! $property->writable)>
-        @if ($property->type->nullable)
+        @if (! $handler->multiple && $property->type->nullable)
             <label>
                 <input
                     {{ $attributes->merge(['name' => $property->variableName])->only('name') }}
@@ -28,12 +40,21 @@
         @endif
         @foreach ($handler->enumCases as $case)
             <label>
-                <input
-                    {{ $attributes->merge(['name' => $property->variableName])->only('name') }}
-                    type="radio"
-                    value="{{ enum_value($case) }}"
-                    @checked(enum_value($case) == ($value ?? old($attributes->get('name', $property->variableName), enum_value($object->{$property->variableName}))))
-                />
+                @if ($handler->multiple)
+                    <input
+                        {{ $attributes->merge(['name' => $property->variableName.'[]'])->only('name') }}
+                        type="checkbox"
+                        value="{{ enum_value($case) }}"
+                        @checked($object->{$property->variableName}->contains($case))
+                    />
+                @else
+                    <input
+                        {{ $attributes->merge(['name' => $property->variableName])->only('name') }}
+                        type="radio"
+                        value="{{ enum_value($case) }}"
+                        @checked(enum_value($case) == ($value ?? old($attributes->get('name', $property->variableName), enum_value($object->{$property->variableName}))))
+                    />
+                @endif
                 {{ enum_desc($case) }}
             </label>
         @endforeach

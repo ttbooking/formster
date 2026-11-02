@@ -7,6 +7,7 @@ return [
     'unsupported' => 'Property type unsupported.',
     'na' => 'N/A',
     'null' => 'not specified',
+    'empty' => 'not selected',
     'on' => '✔️',
     'off' => '❌',
     'open' => 'open',
